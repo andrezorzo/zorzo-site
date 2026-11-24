@@ -36,8 +36,8 @@ This project's Baseline target is Baseline Widely available.
 - **Work branches:** `feature/*`, `bugfix/*`, `hotfix/*` and `docs/*`, created from `main` and merged by
   pull request.
 - **Commits:** conventional commits (`docs:`, `feat:`, `fix:` …), short and focused on why.
-- **Review before push:** no code reaches GitHub until a `code-review` at level `high` on the unreviewed
-  diff comes back with nothing accepted, plus a `security-review` when the diff touches secrets,
+- **Review before push:** on the unreviewed diff, run `simplify`, then `code-review` at level `high`; no code
+  reaches GitHub until the review comes back with nothing accepted, plus a `security-review` when the diff touches secrets,
   configuration, error handling, user input or rendering of model output. Fixes from a review are new code
   and go through the same loop. When a library or browser default affects security, check it in the
   installed source or the spec, not from memory.
