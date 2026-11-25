@@ -8,7 +8,7 @@ const HEALTH_POLL_INTERVAL = 30_000;   // zorzo-api LLD "Values and configuratio
 
 /** Starts checking now; `state` is "online" until the first check answers. */
 export function startHealth() {
-  let state = "online", timer = 0, checking = false;
+  let state = "online", timer = 0, checking = false, reported = 0;
   const subscribers = [];
   function set(next) {
     state = next;
@@ -19,7 +19,11 @@ export function startHealth() {
   async function check() {
     if (checking) return;
     checking = true;
-    try { set(await health()); } finally { checking = false; }
+    const since = reported;
+    try {
+      const next = await health();
+      if (since === reported) set(next);   // a failed question reported offline meanwhile: that wins
+    } finally { checking = false; }
   }
   const recheck = () => { if (state === "offline" && document.visibilityState === "visible") check(); };
   addEventListener("focus", recheck);
@@ -29,6 +33,6 @@ export function startHealth() {
     get state() { return state; },
     /** Calls fn with every new state ("online", "degraded" or "offline"). */
     subscribe(fn) { subscribers.push(fn); },
-    offline: () => set("offline"),
+    offline: () => { reported++; set("offline"); },
   };
 }

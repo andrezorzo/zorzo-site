@@ -35,9 +35,9 @@ class Handler(SimpleHTTPRequestHandler):
         try:
             api.request(self.command, self.path, body or None, headers)
             res = api.getresponse()
-        except OSError:
+        except (OSError, http.client.HTTPException):
             api.close()
-            self.send_error(502, "API unreachable")
+            self.send_error(503, "API unreachable")   # what the page reads as offline (zorzo-api LLD, "Front against the API")
             return
         try:
             self.send_response(res.status, res.reason)
@@ -47,8 +47,8 @@ class Handler(SimpleHTTPRequestHandler):
             while chunk := res.read1(65536):
                 self.wfile.write(chunk)
                 self.wfile.flush()
-        except (BrokenPipeError, ConnectionResetError):
-            pass   # the visitor left (a new question cancels the current one)
+        except (OSError, http.client.HTTPException):
+            pass   # the visitor left (a new question cancels the current one), or the API stopped mid-stream
         finally:
             api.close()
 

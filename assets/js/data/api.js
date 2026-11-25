@@ -101,5 +101,5 @@ export async function* ask(question, { signal }) {
     if (signal.aborted || err instanceof AskError) throw err;
     throw new AskError("dropped");
   }
-  throw new AskError("dropped");
+  throw new AskError(failed ? "failed" : "dropped");
 }

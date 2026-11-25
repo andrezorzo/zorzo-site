@@ -26,6 +26,7 @@ export function startAsk({ scene: brain, stage, ask, published, health }) {
   const tele = $("telemetry"), teleList = tele.querySelector("ol");
   const ans = $("answer"), ansText = $("ansText"), ansSrc = $("ansSources");
   const citeLine = $("citeLine"), citeDot = $("citeDot"), citeSvg = $("cite");
+  const below = $("askBelow"), note = $("askNote"), exList = $("askExamples");   // under the box
   let current = null;            // AbortController of the question in flight
   let teleOn = false, teleAnchor = [], citeFrom = null, citeK = -1;
   const flights = [];
@@ -38,13 +39,14 @@ export function startAsk({ scene: brain, stage, ask, published, health }) {
     let sx = 0, sy = 0; teleAnchor.forEach((i) => { const [x, y] = scene.screenOf(i); sx += x; sy += y; });
     sx /= teleAnchor.length; sy /= teleAnchor.length;
     const w = tele.offsetWidth, h = tele.offsetHeight;
-    if (portrait) { tele.style.transform = `translate(10px, ${H - h - 96}px)`; return; }
+    const ex = below.offsetHeight;   // the box sits above the notice and the examples
+    if (portrait) { tele.style.transform = `translate(10px, ${H - h - 96 - ex}px)`; return; }
     const openA = !ans.hidden, minLeft = openA ? ans.getBoundingClientRect().right + 24 : 8;
     let left = sx + 120 * s, top = sy - h / 2;
     left = Math.max(minLeft, left);
     if (left + w > W - 8) left = W - w - 8;
     if (openA) top = Math.max(8, H * 0.08);   // with the answer open: top-right corner, out of the way
-    top = Math.max(8, Math.min(H - h - 90 * s, top));
+    top = Math.max(8, Math.min(H - h - 90 * s - ex, top));
     tele.style.transform = `translate(${left}px, ${top}px)`;
   }
 
@@ -229,7 +231,8 @@ export function startAsk({ scene: brain, stage, ask, published, health }) {
       }
     });
   }
-  function submit(question) { $("q").value = question; run(question); }
+  // an example in the answer panel stays clickable after the box is disabled: offline, it asks nothing
+  function submit(question) { if (health.state === "offline") return; $("q").value = question; run(question); }
 
   $("ask").addEventListener("submit", (e) => { e.preventDefault(); const q = $("q").value.trim(); if (q) run(q); });
   // the question in flight stops, and its effects with it
@@ -247,7 +250,6 @@ export function startAsk({ scene: brain, stage, ask, published, health }) {
       li.append(b); return li;
     }));
   }
-  const below = $("askBelow"), note = $("askNote"), exList = $("askExamples");
   // the box, the intro and the hub links sit above the notice and the examples, by their height
   new ResizeObserver(([entry]) => stage.style.setProperty("--ex", `${entry.borderBoxSize[0].blockSize}px`)).observe(below);
 
