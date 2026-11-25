@@ -8,7 +8,7 @@ test("says what to fix on 422", async ({ page }) => {
   await expect(page.locator("#stage")).toHaveClass(/ready/);
   await askQuestion(page, "Which cloud services does he use?");
   const message = page.locator("#askError");
-  await expect(message).toHaveText("This question can't be sent. Write it as plain text, and shorter.");
+  await expect(message).toHaveText("This question can't be sent. Write it as plain text, within the length limit.");
   await expect(page.locator("#answer")).toBeHidden();
   await page.locator("#q").pressSequentially("x");
   await expect(message).toBeHidden();   // typing clears it
@@ -85,14 +85,15 @@ test("sends a fresh token with each question", async ({ page }) => {
 });
 
 test("a second question while the first waits for its token gets the token", async ({ page }) => {
-  // the first challenge answers only after the second question is asked
-  await page.addInitScript(() => { (window as any).__turnstileDelay = 800; });
+  // challenges answer only when the test releases them, after both questions are asked
+  await page.addInitScript(() => { (window as any).__turnstile = "held"; });
   const sent: string[] = [];
   page.on("request", (r) => { if (isAskRequest(r)) sent.push(r.postDataJSON().q); });
   await page.goto("/");
   await expect(page.locator("#stage")).toHaveClass(/ready/);
   await askQuestion(page, "Which cloud services does he use?");
   await askQuestion(page, "Has he led a migration?");
+  await page.evaluate(() => (window as any).__releaseTurnstile());
   await expect(page.locator("#ansQ")).toHaveText("Has he led a migration?");
   await expect(page.locator("#ansSources .src")).toHaveCount(6);
   expect(sent).toEqual(["Has he led a migration?"]);   // the replaced question never went out

@@ -69,7 +69,7 @@ export function startTurnstile({ container, triggers }) {
           });
           resolve();
         } catch (err) {   // the script loaded but isn't Turnstile as expected: no token, not a hang
-          loading = null; reject(err);
+          loading = null; script.remove(); reject(err);
         }
       };
       script.onerror = () => { loading = null; script.remove(); reject(new Error("turnstile script")); };
@@ -87,12 +87,17 @@ export function startTurnstile({ container, triggers }) {
       signal?.throwIfAborted();
       if (state === "ready") return take();
       const next = new Promise((resolve, reject) => {
-        const waiter = { resolve, reject };
-        waiting.push(waiter);
-        signal?.addEventListener("abort", () => {   // a newer question replaced this one: leave the line
+        const leave = () => {   // a newer question replaced this one: leave the line
           waiting = waiting.filter((w) => w !== waiter);
           reject(signal.reason);
-        }, { once: true });
+        };
+        const done = () => signal?.removeEventListener("abort", leave);
+        const waiter = {
+          resolve: (token) => { done(); resolve(token); },
+          reject: (err) => { done(); reject(err); },
+        };
+        waiting.push(waiter);
+        signal?.addEventListener("abort", leave, { once: true });
       });
       run();
       return next;
