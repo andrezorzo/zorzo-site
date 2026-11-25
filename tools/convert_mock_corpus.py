@@ -12,11 +12,12 @@ Its entities become the front's entity list (assets/data/entities.json).
 
 Writes demo-data/manifest.json, demo-data/<hash>/{corpus,examples}.json and assets/data/entities.json.
 """
-import datetime, hashlib, json, re, sys, unicodedata
+import datetime, hashlib, json, re, shutil, sys, unicodedata
 from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
+VERSION = 0   # not a real corpus version: the demo never comes from the database
 SOURCE_URL = {"prosa": "https://github.com/andrezorzo/prosa", "github": "https://github.com/andrezorzo"}
 
 
@@ -32,7 +33,7 @@ def slug(name: str) -> str:
 mock = json.loads(Path(sys.argv[1]).read_text())
 examples = [{"id": e["id"], "lang": e["lang"], "text": e["text"]} for e in yaml.safe_load(Path(sys.argv[2]).read_text())]
 corpus = {
-    "corpus_version": 0,
+    "corpus_version": VERSION,
     "chunks": [
         {
             "id": k + 1,
@@ -51,15 +52,12 @@ corpus = {
 files = {"corpus.json": dumps(corpus), "examples.json": dumps(examples)}
 digest = hashlib.sha256(files["corpus.json"] + b"\0" + files["examples.json"]).hexdigest()
 out = ROOT / "demo-data"
-for old in out.glob("*/"):
-    for f in old.iterdir():
-        f.unlink()
-    old.rmdir()
-(out / digest).mkdir(parents=True, exist_ok=True)
+shutil.rmtree(out, ignore_errors=True)
+(out / digest).mkdir(parents=True)
 for name, content in files.items():
     (out / digest / name).write_bytes(content)
 manifest = {
-    "corpus_version": 0,
+    "corpus_version": VERSION,
     "embed_model_tag": "mock-tfidf-tsne",
     "path": f"demo-data/{digest}/",
     "published_at": datetime.datetime.now(datetime.UTC).isoformat(timespec="seconds"),

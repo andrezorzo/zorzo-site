@@ -3,9 +3,9 @@
 // "Stream events"); the brain, when there is one, only reacts to them. Without the brain everything here works
 // the same, minus the effects (F01 PRD, story S11).
 
-import { onLang, t } from "../i18n.js";
+import { currentLang, onLang, t } from "../i18n.js";
 import { term, words } from "../text.js";
-import { $, norm } from "../util.js";
+import { $, norm, REDUCED } from "../util.js";
 
 /**
  * @param scene the brain's controls, or null without 3D
@@ -16,7 +16,7 @@ export function startAsk({ scene, stage, ask, published }) {
   const chunks = published.corpus.chunks;
   const byId = new Map(chunks.map((c, k) => [c.id, k]));
   const tele = $("telemetry"), teleList = tele.querySelector("ol");
-  const ans = $("answer"), ansText = $("ansText"), ansSrc = $("ansSources"), ansFoot = $("ansFoot");
+  const ans = $("answer"), ansText = $("ansText"), ansSrc = $("ansSources");
   const citeLine = $("citeLine"), citeDot = $("citeDot"), citeSvg = $("cite");
   let current = null;            // AbortController of the question in flight
   let teleOn = false, teleAnchor = [], citeFrom = null, citeK = -1;
@@ -33,7 +33,7 @@ export function startAsk({ scene, stage, ask, published }) {
     if (portrait) { tele.style.transform = `translate(10px, ${H - h - 96}px)`; return; }
     const openA = !ans.hidden, minLeft = openA ? ans.getBoundingClientRect().right + 24 : 8;
     let left = sx + 120 * s, top = sy - h / 2;
-    if (left < minLeft) left = Math.max(minLeft, sx + 120 * s);
+    left = Math.max(minLeft, left);
     if (left + w > W - 8) left = W - w - 8;
     if (openA) top = Math.max(8, H * 0.08);   // with the answer open: top-right corner, out of the way
     top = Math.max(8, Math.min(H - h - 90 * s, top));
@@ -50,8 +50,8 @@ export function startAsk({ scene, stage, ask, published }) {
     let left = ws.length;
     ws.forEach((w, n) => {
       const h = hits.findIndex((_, j) => hitWords[j].has(term(w)));
-      const e = entities.findIndex((ent) => norm(ent.name).includes(w));
-      const target = blocked ? -1 : h >= 0 ? hits[h] : e >= 0 ? scene.entityPoint(published.entities.indexOf(entities[e])) : -1;
+      const e = entities.find((j) => norm(published.entities[j].name).includes(w));
+      const target = blocked ? -1 : h >= 0 ? hits[h] : e !== undefined ? scene.entityPoint(e) : -1;
       const el = document.createElement("span");
       el.className = "tok" + (blocked ? " blocked" : target < 0 ? " miss" : "");
       el.textContent = w; stage.append(el);
@@ -106,7 +106,7 @@ export function startAsk({ scene, stage, ask, published }) {
   }
   function startPanel(question) {
     $("ansQ").textContent = question;
-    ansText.replaceChildren(); ansSrc.replaceChildren(); ansFoot.replaceChildren();
+    ansText.replaceChildren(); ansSrc.replaceChildren();
     ansText.className = "ans-text";
     openAnswer(true);
   }
@@ -154,12 +154,12 @@ export function startAsk({ scene, stage, ask, published }) {
 
   /* ---- one question: the events drive the steps, the brain and the panel */
   async function run(question) {
-    current?.abort();
+    reset();
     const controller = new AbortController(), { signal } = controller;
     current = controller;
     const t0 = performance.now();
-    const named = published.entities.filter((e) => norm(question).includes(norm(e.name)));
-    scene?.clearHeld(); clearFlights(); hoverChunk(null, -1);
+    const nq = norm(question);
+    const named = published.entities.flatMap((e, j) => (nq.includes(norm(e.name)) ? [j] : []));
     teleList.replaceChildren(); tele.hidden = false; teleOn = true;
     teleAnchor = scene ? [scene.hubPoint(1)] : [];
     teleLine(t().query(words(question).length, question.length));
@@ -170,7 +170,7 @@ export function startAsk({ scene, stage, ask, published }) {
         if (ev.kind === "stage" && ev.status === "end") {
           if (ev.name === "retrieve") { retrieveMs = ev.ms; continue; }   // shown with the hits
           teleLine(ev.name === "guard" ? t().guardOk : t().stage(ev.name, ev.ms));
-          if (ev.name === "guard" && named.length) teleLine(`graph · ${named.map((e) => e.name).join(", ")}`);
+          if (ev.name === "guard" && named.length) teleLine(`graph · ${named.map((j) => published.entities[j].name).join(", ")}`);
         } else if (ev.kind === "blocked") {
           blocked = ev; teleLine(t().guardBlocked(ev.layer), "warn");
         } else if (ev.kind === "degraded") {
@@ -207,14 +207,15 @@ export function startAsk({ scene, stage, ask, published }) {
   function submit(question) { $("q").value = question; run(question); }
 
   $("ask").addEventListener("submit", (e) => { e.preventDefault(); const q = $("q").value.trim(); if (q) run(q); });
-  function stop() { current?.abort(); current = null; clearFlights(); teleOn = false; tele.hidden = true; scene?.clearHeld(); }
+  // the question in flight stops, and its effects with it
+  function reset() { current?.abort(); current = null; clearFlights(); hoverChunk(null, -1); scene?.clearHeld(); }
+  function stop() { reset(); teleOn = false; tele.hidden = true; }
   $("teleClose").addEventListener("click", stop);
-  $("ansClose").addEventListener("click", () => { stop(); openAnswer(false); hoverChunk(null, -1); });
+  $("ansClose").addEventListener("click", () => { stop(); openAnswer(false); });
 
   /* ---- example questions of the interface language: the box's rotating placeholder */
-  const examplesInLang = () => published.examples.filter((e) => e.lang === document.documentElement.dataset.lang);
+  const examplesInLang = () => published.examples.filter((e) => e.lang === currentLang());
   let phTimer = 0, phIndex = 0;
-  const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
   function rotatePlaceholder() {
     clearInterval(phTimer); phIndex = 0;
     const q = $("q"), list = examplesInLang();
@@ -231,5 +232,4 @@ export function startAsk({ scene, stage, ask, published }) {
   });
 
   if (scene) scene.onFrame((now) => { stepFlights(now); placeTele(); placeCite(); });
-  return { ask: submit };
 }

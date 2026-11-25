@@ -1,0 +1,177 @@
+[
+ {
+  "id": "e:alert-logic",
+  "name": "Alert Logic",
+  "type": "company"
+ },
+ {
+  "id": "e:titan-shark",
+  "name": "Titan Shark",
+  "type": "company"
+ },
+ {
+  "id": "e:aleo",
+  "name": "Aleo",
+  "type": "company"
+ },
+ {
+  "id": "e:instrodi",
+  "name": "InStrodi",
+  "type": "company"
+ },
+ {
+  "id": "e:python",
+  "name": "Python",
+  "type": "tech"
+ },
+ {
+  "id": "e:aws",
+  "name": "AWS",
+  "type": "tech"
+ },
+ {
+  "id": "e:lambda",
+  "name": "Lambda",
+  "type": "tech"
+ },
+ {
+  "id": "e:dynamodb",
+  "name": "DynamoDB",
+  "type": "tech"
+ },
+ {
+  "id": "e:redis",
+  "name": "Redis",
+  "type": "tech"
+ },
+ {
+  "id": "e:elasticsearch",
+  "name": "Elasticsearch",
+  "type": "tech"
+ },
+ {
+  "id": "e:php",
+  "name": "PHP",
+  "type": "tech"
+ },
+ {
+  "id": "e:postgres",
+  "name": "Postgres",
+  "type": "tech"
+ },
+ {
+  "id": "e:pgvector",
+  "name": "pgvector",
+  "type": "tech"
+ },
+ {
+  "id": "e:docker",
+  "name": "Docker",
+  "type": "tech"
+ },
+ {
+  "id": "e:fastapi",
+  "name": "FastAPI",
+  "type": "tech"
+ },
+ {
+  "id": "e:langgraph",
+  "name": "LangGraph",
+  "type": "tech"
+ },
+ {
+  "id": "e:langfuse",
+  "name": "Langfuse",
+  "type": "tech"
+ },
+ {
+  "id": "e:openrouter",
+  "name": "OpenRouter",
+  "type": "tech"
+ },
+ {
+  "id": "e:chroma",
+  "name": "Chroma",
+  "type": "tech"
+ },
+ {
+  "id": "e:ollama",
+  "name": "Ollama",
+  "type": "tech"
+ },
+ {
+  "id": "e:kinesis",
+  "name": "Kinesis",
+  "type": "tech"
+ },
+ {
+  "id": "e:react",
+  "name": "React",
+  "type": "tech"
+ },
+ {
+  "id": "e:ecs",
+  "name": "ECS",
+  "type": "tech"
+ },
+ {
+  "id": "e:mcp",
+  "name": "MCP",
+  "type": "concept"
+ },
+ {
+  "id": "e:rag",
+  "name": "RAG",
+  "type": "concept"
+ },
+ {
+  "id": "e:soc",
+  "name": "SOC",
+  "type": "concept"
+ },
+ {
+  "id": "e:etl",
+  "name": "ETL",
+  "type": "concept"
+ },
+ {
+  "id": "e:serverless",
+  "name": "serverless",
+  "type": "concept"
+ },
+ {
+  "id": "e:evals",
+  "name": "evals",
+  "type": "concept"
+ },
+ {
+  "id": "e:embeddings",
+  "name": "embeddings",
+  "type": "concept"
+ },
+ {
+  "id": "e:prompt-injection",
+  "name": "prompt injection",
+  "type": "concept"
+ },
+ {
+  "id": "e:prosa",
+  "name": "Prosa",
+  "type": "project"
+ },
+ {
+  "id": "e:battle-of-the-bits",
+  "name": "Battle of the Bits",
+  "type": "project"
+ },
+ {
+  "id": "e:cyclos",
+  "name": "Cyclos",
+  "type": "project"
+ },
+ {
+  "id": "e:zorzo-dev-br",
+  "name": "zorzo.dev.br",
+  "type": "project"
+ }
+]

@@ -65,9 +65,6 @@ html { scroll-behavior: smooth; }
 .leader polyline { fill: none; stroke: rgba(216, 254, 254, .55); stroke-width: 1; }
 .leader circle { fill: none; stroke: var(--mint-hi); stroke-width: 1.2; }
 
-.hud { left: 16px; bottom: 12px; font-size: 11px; color: var(--lilac-dim); pointer-events: none; }
-.hud p { margin: 2px 0; }
-kbd { font-family: inherit; color: var(--mint); }
 
 /* prompt */
 .ask {
@@ -108,7 +105,6 @@ kbd { font-family: inherit; color: var(--mint); }
 .telemetry li.warn { color: var(--amber); }
 .telemetry li.dim { color: var(--lilac-dim); }
 @keyframes tl-in { from { opacity: 0; transform: translateX(-6px); } }
-.hud { bottom: auto; top: 12px; }
 
 /* final result */
 .answer {
@@ -129,12 +125,6 @@ kbd { font-family: inherit; color: var(--mint); }
 .answer header button { border: 0; background: none; color: var(--lilac); font: inherit; font-size: 18px; line-height: 1; cursor: pointer; }
 .ans-text { margin: calc(12 * var(--px)) 0 0; font-size: calc(14 * var(--px)); color: #E4F2F3; }
 .ans-text.warn { color: var(--amber); }
-.cite {
-  display: inline-grid; place-items: center; min-width: 1.5em; height: 1.4em; margin: 0 2px; padding: 0 3px;
-  border: 1px solid rgba(245, 213, 138, .55); background: rgba(245, 213, 138, .08); color: var(--amber);
-  font: inherit; font-size: .78em; line-height: 1; vertical-align: .15em; cursor: pointer;
-}
-.cite:hover { background: rgba(245, 213, 138, .2); }
 .ans-note { margin: calc(10 * var(--px)) 0 0; font-size: calc(11 * var(--px)); color: var(--lilac-dim); }
 .ans-sources { list-style: none; margin: calc(12 * var(--px)) 0 0; padding: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(192,192,224,.26) transparent; }
 .ans-sources h4 { margin: 0 0 6px; font-weight: 400; font-size: calc(11 * var(--px)); color: var(--lilac); letter-spacing: .04em; }
@@ -152,15 +142,10 @@ kbd { font-family: inherit; color: var(--mint); }
 .ans-examples button { border: 0; padding: 2px 0; background: none; font: inherit; color: var(--mint-hi); text-align: left; cursor: pointer; }
 .ans-examples button::before { content: "> "; color: var(--mint); }
 .ans-examples button:hover { color: var(--amber); }
-.ans-foot { display: flex; justify-content: space-between; gap: 10px; margin-top: calc(10 * var(--px)); font-size: calc(11 * var(--px)); }
-.ans-foot:empty { display: none; }
-.ans-foot a { color: var(--lilac); }
-.ans-foot a:hover { color: var(--mint-hi); }
 svg.cite-lines { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; opacity: 0; transition: opacity .15s ease; overflow: visible; border: 0; background: none; margin: 0; padding: 0; }
 svg.cite-lines.is-on { opacity: 1; }
 svg.cite-lines polyline { fill: none; stroke: rgba(245, 213, 138, .7); stroke-width: 1; }
 svg.cite-lines circle { fill: none; stroke: var(--amber); stroke-width: 1.3; }
-.has-answer .hud { opacity: 0; }
 .has-answer .label { opacity: .18; }
 
 /* ---------------------------------------------------------------- phones (portrait) */
@@ -171,8 +156,6 @@ svg.cite-lines circle { fill: none; stroke: var(--amber); stroke-width: 1.3; }
   .card h3 { font-size: 17px; }
   .card a { font-size: 13px; padding: 8px 12px; }
   .ask { bottom: calc(14px + env(safe-area-inset-bottom)); height: 50px; }
-  .hud { font-size: 10px; left: 10px; top: calc(8px + env(safe-area-inset-top)); }
-  .hud p:first-child { display: none; }
   .telemetry { min-width: 0; width: calc(100vw - 20px); font-size: 11.5px; padding: 6px 10px; background: rgba(8, 12, 26, .78); }
   .telemetry header { font-size: 10.5px; }
   .has-answer .telemetry { display: none; }
@@ -182,7 +165,7 @@ svg.cite-lines circle { fill: none; stroke: var(--amber); stroke-width: 1.3; }
   }
   .ans-q { font-size: 15px; }
   .ans-text { font-size: 15px; }
-  .ans-note, .ans-foot, .src-top { font-size: 12px; }
+  .ans-note, .src-top { font-size: 12px; }
   .src-text { font-size: 13px; }
   .tok { font-size: 13px; }
 }
@@ -194,7 +177,6 @@ svg.cite-lines circle { fill: none; stroke: var(--amber); stroke-width: 1.3; }
 :root { --mint-term: #8FD8C4; }
 .sr-only { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .dbg { left: 12px; top: 8px; margin: 0; font-size: 11px; color: var(--amber); background: rgba(0,0,0,.6); padding: 3px 6px; }
-.dbg[hidden] { display: none; }
 .lang { right: calc(28 * var(--px)); top: calc(22 * var(--px)); z-index: 6; display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--lilac-dim); }
 .lang button { border: 0; background: none; padding: 6px 3px; cursor: pointer; color: var(--lilac-dim); font: inherit; letter-spacing: .04em; }
 .lang button:hover { color: var(--lilac); }

@@ -10,7 +10,7 @@ export function startHubs(scene, stage) {
     $("labels").append(el); return el;
   });
   const card = $("card"), leader = $("leader"), leaderLine = $("leaderLine"), leaderDot = $("leaderDot");
-  let cardHub = -1, hideTimer = 0, cardSide = null;
+  let cardHub = -1, hideTimer = 0, cardSide = null, labelW = [];
 
   function fillCard(j) {
     const h = t().hubs[scene.hubIds[j]];
@@ -26,7 +26,7 @@ export function startHubs(scene, stage) {
     const { W, H, s } = scene.size();
     scene.hubIds.forEach((_, j) => {
       const [x, y, z] = scene.screenOf(scene.hubPoint(j));
-      const lw = labels[j].offsetWidth, flip = x + 10 + lw > W - 6;   // near the right edge: label goes to the left of its point
+      const lw = labelW[j], flip = x + 10 + lw > W - 6;   // near the right edge: label goes to the left of its point
       labels[j].classList.toggle("flip", flip);
       labels[j].style.transform = `translate(${flip ? x - 10 - lw : x + 10 * Math.max(s, 0.6)}px, ${y - 8}px)`;
       labels[j].classList.toggle("back", z < -0.2);
@@ -83,6 +83,7 @@ export function startHubs(scene, stage) {
 
   onLang(() => {
     scene.hubIds.forEach((id, j) => { labels[j].textContent = t().hubs[id].title; });
+    labelW = labels.map((el) => el.offsetWidth);   // measured once per language, not every frame
     if (cardHub >= 0) fillCard(cardHub);
   });
 }

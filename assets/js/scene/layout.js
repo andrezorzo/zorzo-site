@@ -8,7 +8,7 @@ export const REGION = {
   resume: "frontal", narrative: "frontal", faq: "frontal",
   project_doc: "temporal", repo: "temporal", site_doc: "parietal", post: "occipital",
 };
-const SEG = 10;        // segments per axon curve
+export const SEG = 10; // segments per axon curve
 const NEIGHBOURS = 2;  // axons per chunk, to its nearest neighbours in embedding space
 
 /** brain.json keeps its big arrays as flat integers (tools/pack_brain.py) → [x, y, z] points. */
@@ -86,4 +86,3 @@ export function placeEntities(entities, anchors) {
   });
 }
 
-export { SEG };

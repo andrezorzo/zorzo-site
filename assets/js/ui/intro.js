@@ -1,10 +1,9 @@
 // The intro: the typed terminal line, the role, and the PT/EN switch.
 
 import { onLang, setLang, t } from "../i18n.js";
-import { $ } from "../util.js";
+import { $, REDUCED } from "../util.js";
 
 export function startIntro() {
-  const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
   let typeTimer = 0;
   function typeLine() {
     clearTimeout(typeTimer);

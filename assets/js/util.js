@@ -14,3 +14,18 @@ export function mulberry32(a) {
     return ((t ^ t >>> 14) >>> 0) / 4294967296;
   };
 }
+
+/** The visitor asked the system for less motion: no brain, no typing, no rotating placeholder. */
+export const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/** True when this browser can draw the brain. */
+export function webglAvailable() {
+  try { const c = document.createElement("canvas"); return Boolean(c.getContext("webgl2") || c.getContext("webgl")); } catch { return false; }
+}
+
+/** GET a JSON file; a non-2xx response is an error that names the file and the status. */
+export async function fetchJson(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw Object.assign(new Error(`${url}: ${r.status}`), { status: r.status });
+  return r.json();
+}

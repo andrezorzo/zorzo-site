@@ -17,11 +17,6 @@ const TIERS = [{ name: "low", pr: 1, keep: 0.4 }, { name: "mid", pr: 1.25, keep:
 const IDLE_DX = 0.09;
 const D = 7;
 
-/** True when this browser can draw the brain. */
-export function webglAvailable() {
-  try { const c = document.createElement("canvas"); return Boolean(c.getContext("webgl2") || c.getContext("webgl")); } catch { return false; }
-}
-
 /**
  * Draws the brain on `canvas`. `chunks` are the published corpus chunks; `entities` carry the indices of the
  * chunks that name them. Returns the controls the interface uses.
@@ -139,6 +134,8 @@ export function createScene({ canvas, stage, brain: DATA, chunks, entities }) {
       });
     };
     runs(0); runs(1);
+    // a tier change rebuilds the mesh: free the old buffers on the GPU first
+    if (lgeo.getAttribute("position")) lgeo.dispose();
     lgeo.setAttribute("position", new THREE.Float32BufferAttribute(lp, 3));
     lgeo.setAttribute("aColor", new THREE.Float32BufferAttribute(lc, 3));
   }
