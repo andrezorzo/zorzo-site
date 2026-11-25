@@ -8,47 +8,58 @@ import { LOCAL } from "../util.js";
 
 const SCRIPT = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
 const TEST_SITE_KEY = "1x00000000000000000000BB";   // Cloudflare's invisible always-pass test key
-// The production key comes from Cloudflare's dashboard with the deploy; until then the page has no token
-// in production, and the gate refuses its questions (fail closed).
+// The production key comes from Cloudflare's dashboard with the deploy; until then production loads no script
+// and has no token, so every question shows the bot-check message (fail closed).
 const SITE_KEY = "";
 
 /**
  * @param container the element the widget renders into (it stays invisible)
  * @param triggers elements whose first focus, key or pointer press loads the script
- * @returns token(): Promise<string> (rejects when no token can be had), used(): the token went to a request
+ * @returns token(): Promise<string>, a single-use token (rejects when none can be had); handing one out
+ *   resets the widget and fetches the next ahead
  */
 export function startTurnstile({ container, triggers }) {
+  const siteKey = LOCAL ? TEST_SITE_KEY : SITE_KEY;
   let api = null, widget = null, loading = null;
-  let ready = null;        // a token fetched ahead, not yet used
-  let waiting = [];        // questions waiting for the next token
-  let running = false;     // a challenge is in progress
-  let failed = false;      // the last challenge errored: the widget needs a reset before the next
+  // idle: nothing in hand; running: a challenge is out; ready: a token in hand. The widget is reset only when
+  // no challenge is out, so a late callback can never land as the next question's token.
+  let state = "idle", ready = null;
+  let waiting = [];   // questions waiting for the challenge that is out
 
   function settle(token, error) {
-    running = false;
+    state = token ? "ready" : "idle";
+    ready = token;
     const now = waiting; waiting = [];
-    if (token && !now.length) { ready = token; return; }   // fetched ahead
-    now.forEach(({ resolve, reject }) => (token ? resolve(token) : reject(error)));
+    if (token && now.length) now[0].resolve(take());
+    now.slice(token ? 1 : 0).forEach(({ reject }) => reject(error ?? new Error("turnstile token taken")));
   }
   function run() {
-    if (running) return;
-    running = true;
-    if (failed) { failed = false; api.reset(widget); }
+    if (state !== "idle") return;
+    state = "running";
     api.execute(widget);
   }
+  function take() {   // hand out the token in hand, then fetch the next one (a token is single-use)
+    const token = ready;
+    ready = null; state = "idle";
+    api.reset(widget);
+    run();
+    return token;
+  }
   function load() {
+    if (!siteKey) return Promise.reject(new Error("no Turnstile site key"));   // no script without a key
     loading ??= new Promise((resolve, reject) => {
       const script = document.createElement("script");
       script.src = SCRIPT; script.async = true;
       script.onload = () => {
         api = window.turnstile;
         widget = api.render(container, {
-          sitekey: LOCAL ? TEST_SITE_KEY : SITE_KEY,
+          sitekey: siteKey,
           execution: "execute",
           callback: (token) => settle(token),
-          "error-callback": () => { failed = true; settle(null, new Error("turnstile error")); return true; },
-          "timeout-callback": () => { failed = true; settle(null, new Error("turnstile timeout")); },
-          "expired-callback": () => { ready = null; },
+          // after a failure the widget needs a reset before the next challenge
+          "error-callback": () => { api.reset(widget); settle(null, new Error("turnstile error")); return true; },
+          "timeout-callback": () => { api.reset(widget); settle(null, new Error("turnstile timeout")); },
+          "expired-callback": () => { if (state === "ready") { ready = null; state = "idle"; } },
         });
         resolve();
       };
@@ -58,22 +69,16 @@ export function startTurnstile({ container, triggers }) {
     return loading;
   }
   // The first interaction loads the script and fetches a token ahead; a failure here surfaces on the question.
-  const warm = () => { load().then(() => { if (!ready) run(); }).catch(() => {}); };
+  const warm = () => { load().then(run).catch(() => {}); };
   triggers.forEach((el) => ["focusin", "keydown", "pointerdown"].forEach((type) => el.addEventListener(type, warm, { once: true })));
 
   return {
     async token() {
       await load();
-      if (ready) { const token = ready; ready = null; return token; }
+      if (state === "ready") return take();
       const next = new Promise((resolve, reject) => waiting.push({ resolve, reject }));
       run();
       return next;
-    },
-    used() {   // a token is single-use: reset the widget and fetch the next one now
-      if (!api) return;
-      ready = null; running = false;
-      api.reset(widget);
-      run();
     },
   };
 }

@@ -18,7 +18,7 @@ const flightDur = (n) => 950 + n * 40;
  * @param published { corpus, examples, entities }
  * @param health the API's health (ui/health.js): its state drives the box, and a question that finds the API
  *   unreachable reports it
- * @param bot the bot check (ui/turnstile.js): a fresh token for each question
+ * @param bot the bot check (ui/turnstile.js): `token()` hands out a fresh, single-use token
  */
 export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
   let scene = brain;   // becomes null if the brain fails: from then on, the path without 3D
@@ -191,7 +191,6 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
       let token;
       try { token = await bot.token(); } catch (err) { console.error(err); throw new AskError("bot"); }
       signal.throwIfAborted();
-      bot.used();
       try { yield* ask(question, { signal, token }); return; } catch (err) {
         if (retried || !(err instanceof AskError) || err.kind !== "bot") throw err;
       }
@@ -238,7 +237,7 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
       console.error(err);
     }
     if (failure?.kind === "invalid") {   // nothing to show in the panel: the question itself needs fixing
-      teleOn = false; tele.hidden = true;
+      hideTele();
       inputError.textContent = t().invalidInput; inputError.hidden = false;
       return;
     }
@@ -264,7 +263,8 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
   $("q").addEventListener("input", () => { inputError.hidden = true; });
   // the question in flight stops, and its effects with it
   function reset() { current?.abort(); current = null; clearFlights(); hoverChunk(null, -1); scene?.clearHeld(); inputError.hidden = true; }
-  function stop() { reset(); teleOn = false; tele.hidden = true; }
+  function hideTele() { teleOn = false; tele.hidden = true; }
+  function stop() { reset(); hideTele(); }
   $("teleClose").addEventListener("click", stop);
   $("ansClose").addEventListener("click", () => { stop(); openAnswer(false); });
 
