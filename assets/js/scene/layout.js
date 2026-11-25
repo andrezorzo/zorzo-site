@@ -36,6 +36,7 @@ export function placeChunks(chunks, pools) {
   });
   byRegion.forEach((ids, r) => {
     const pool = pools[r];
+    if (!pool?.length) throw new Error(`brain.json has no pool for region ${r}`);
     // more chunks than pool points: reuse the pool, nudged outward, rather than drop a chunk
     const slots = ids.map((_, n) => {
       const p = pool[n % pool.length], lap = Math.floor(n / pool.length);

@@ -18,15 +18,7 @@ const brainFiles = !REDUCED && webglAvailable()
   : null;
 brainFiles?.catch(() => {});   // a failure here only means no brain; it is handled below
 
-let published;
-try {
-  published = await loadPublished();
-} catch (err) {
-  // without data there is nothing to ask: the still image and the plain links stay
-  console.error(err);
-  stage.classList.add("no-gl", "no-js");
-  throw err;
-}
+const published = await loadPublished();   // never fails: without data, an empty corpus
 
 let scene = null;
 if (brainFiles) {
@@ -34,6 +26,8 @@ if (brainFiles) {
     const [{ createScene }, { unpackBrain }, brain] = await brainFiles;
     scene = createScene({ canvas: $("scene"), stage, brain: unpackBrain(brain), chunks: published.corpus.chunks, entities: published.entities });
     startHubs(scene, stage);
+    // created but never drawn (a shader or driver failure inside the render loop): the plain links come back
+    setTimeout(() => { if (!stage.classList.contains("gl")) stage.classList.add("no-gl"); }, 6000);
   } catch (err) {
     console.error(err);   // the still image stays; asking still works
     scene = null;

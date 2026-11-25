@@ -34,3 +34,11 @@ test.describe("in Portuguese", () => {
     await expect(page.locator(".ans-examples button")).toHaveText(textsIn("en"));
   });
 });
+
+test("keeps the question box when the published data fails", async ({ page }) => {
+  await page.route((url) => url.pathname === "/data/manifest.json", (route) => route.fulfill({ status: 500 }));
+  await page.goto("/");
+  await expect(page.locator("#stage")).toHaveClass(/ready/);
+  await askQuestion(page, "Which cloud services does he use?");
+  await expect(page.locator("#ansText")).toContainText(/No matching sources|Nenhuma fonte/);
+});

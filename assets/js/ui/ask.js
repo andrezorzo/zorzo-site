@@ -4,8 +4,8 @@
 // the same, minus the effects (F01 PRD, story S11).
 
 import { currentLang, onLang, t } from "../i18n.js";
-import { term, words } from "../text.js";
-import { $, norm, REDUCED } from "../util.js";
+import { namedIn, term, words } from "../text.js";
+import { $, REDUCED } from "../util.js";
 
 /**
  * @param scene the brain's controls, or null without 3D
@@ -26,6 +26,8 @@ export function startAsk({ scene, stage, ask, published }) {
   function teleLine(txt, cls) { const li = document.createElement("li"); li.textContent = txt; if (cls) li.className = cls; teleList.append(li); }
   function placeTele() {
     if (!scene || !teleOn || !teleAnchor.length) return;
+    // the scene lost its WebGL context: the panel takes the fixed corner of the page without 3D
+    if (stage.classList.contains("no-gl")) { tele.style.transform = ""; return; }
     const { W, H, s, portrait } = scene.size();
     let sx = 0, sy = 0; teleAnchor.forEach((i) => { const [x, y] = scene.screenOf(i); sx += x; sy += y; });
     sx /= teleAnchor.length; sy /= teleAnchor.length;
@@ -41,7 +43,11 @@ export function startAsk({ scene, stage, ask, published }) {
   }
 
   /* ---- tokens fly from the box into the brain: to a chunk that has the word, an entity named by it, or nowhere */
-  function flyTokens(question, hits, entities, blocked, onDone) {
+  function flyTokens(question, hits, entities, blocked, landed) {
+    // the answer never waits on frames: a hidden tab or a stalled scene still gets it after the longest flight
+    let fired = false;
+    const onDone = () => { if (!fired) { fired = true; landed(); } };
+    setTimeout(onDone, 950 + 7 * 180 + 300);
     if (!scene) { onDone(); return; }
     const box = $("q").getBoundingClientRect(), sr = stage.getBoundingClientRect();
     const ws = words(question).slice(0, 7);
@@ -50,7 +56,7 @@ export function startAsk({ scene, stage, ask, published }) {
     let left = ws.length;
     ws.forEach((w, n) => {
       const h = hits.findIndex((_, j) => hitWords[j].has(term(w)));
-      const e = entities.find((j) => norm(published.entities[j].name).includes(w));
+      const e = entities.find((j) => words(published.entities[j].name).includes(w));
       const target = blocked ? -1 : h >= 0 ? hits[h] : e !== undefined ? scene.entityPoint(e) : -1;
       const el = document.createElement("span");
       el.className = "tok" + (blocked ? " blocked" : target < 0 ? " miss" : "");
@@ -144,7 +150,7 @@ export function startAsk({ scene, stage, ask, published }) {
       b.addEventListener("mouseleave", () => hoverChunk(null, -1));
       b.addEventListener("click", () => scene?.impulse(k, 2, true));
       li.append(b); ansSrc.append(li);
-      if (ch.source_url) {
+      if (/^https?:\/\//i.test(ch.source_url || "")) {   // only web links: never a javascript: URL from the data
         const link = document.createElement("a"); link.className = "src-link"; link.href = ch.source_url; link.textContent = ch.source_url;
         link.target = "_blank"; link.rel = "noopener"; li.append(link);
       }
@@ -158,8 +164,7 @@ export function startAsk({ scene, stage, ask, published }) {
     const controller = new AbortController(), { signal } = controller;
     current = controller;
     const t0 = performance.now();
-    const nq = norm(question);
-    const named = published.entities.flatMap((e, j) => (nq.includes(norm(e.name)) ? [j] : []));
+    const named = namedIn(published.entities, question);
     teleList.replaceChildren(); tele.hidden = false; teleOn = true;
     teleAnchor = scene ? [scene.hubPoint(1)] : [];
     teleLine(t().query(words(question).length, question.length));

@@ -2,12 +2,13 @@
 // emits the same stream events as the API in search-only mode (zorzo-api `contracts/sse-v1.schema.json`).
 // F01-T03 replaces this module with the API client; the interface only sees the events.
 
-import { term, words } from "../text.js";
+import { namedIn, term, words } from "../text.js";
 import { norm } from "../util.js";
 import { loadPublished } from "./published.js";
 
 const MAX_PASSAGES = 6;   // zorzo-api LLD, DEGRADED_MAX_PASSAGES
-const OVERRIDE = /(ignore|ignora|disregard|system prompt|prompt do sistema|jailbreak|suas instru|your instruc|pretend|finja)/;
+// whole phrases, so "has he ignored an alert?" is a question, not an attack
+const OVERRIDE = /\b(ignore (all|any|the|your|previous)|ignora (as|suas|todas)|disregard|system prompt|prompt do sistema|jailbreak|suas instrucoes|your instructions|pretend (to|you)|finja (que|ser))\b/;
 
 let index = null;
 function buildIndex(chunks) {
@@ -18,6 +19,7 @@ function buildIndex(chunks) {
 }
 
 function search(q, chunks, entities) {
+  if (!chunks.length) return [];
   index ??= buildIndex(chunks);
   const { docs, df, avg } = index, qt = words(q).map(term);
   const scored = docs.map((d) => {
@@ -29,8 +31,7 @@ function search(q, chunks, entities) {
     }
     return sc;
   });
-  const nq = norm(q);
-  entities.filter((e) => nq.includes(norm(e.name))).forEach((e) => e.chunks.forEach((k) => { scored[k] = scored[k] * 1.5 + 0.6; }));
+  namedIn(entities, q).forEach((j) => entities[j].chunks.forEach((k) => { scored[k] = scored[k] * 1.5 + 0.6; }));
   const ranked = scored.map((sc, k) => ({ sc, k })).filter((r) => r.sc > 0).sort((a, b) => b.sc - a.sc);
   const top = ranked[0]?.sc || 0;
   return ranked.filter((r) => r.sc >= top * 0.35).slice(0, MAX_PASSAGES);

@@ -14,3 +14,15 @@ const SYN = { anos: "years", ano: "years", experiencia: "experience", projeto: "
 /** The words of a question or chunk, without stop words. */
 export const words = (x) => norm(x).split(/[^a-z0-9.+#]+/).map((w) => w.replace(/\.$/, "")).filter((w) => w.length > 1 && !STOP.has(w));
 export const term = (w) => SYN[w] || w;
+
+/** Whole-word, case- and accent-insensitive match for a name (an entity) in normalized text. */
+export function wholeWord(name) {
+  const escaped = norm(name).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(^|[^a-z0-9])${escaped}($|[^a-z0-9])`);
+}
+
+/** Indices of the entities a text names, whole words only ("specs" does not name ECS). */
+export const namedIn = (entities, text) => {
+  const x = norm(text);
+  return entities.flatMap((e, j) => (e.pattern.test(x) ? [j] : []));
+};

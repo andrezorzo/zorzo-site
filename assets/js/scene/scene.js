@@ -234,6 +234,7 @@ export function createScene({ canvas, stage, brain: DATA, chunks, entities }) {
   function clearHeld() { held.forEach((i) => { glow[i] = i < C ? 0.55 : glow[i]; }); held.clear(); glowAttr.needsUpdate = true; }
   function fireAt(i) { fire[i] = uniforms.uTime.value; fireAttr.needsUpdate = true; }
   function impulse(start, depth = 3, keep = false) {
+    if (!adj[start]) return;   // no such chunk (an empty corpus)
     const t0 = uniforms.uTime.value, dur = axonUniforms.uDur.value;
     if (!keep) clearHeld();
     const when = new Map([[start, t0]]);
@@ -257,6 +258,7 @@ export function createScene({ canvas, stage, brain: DATA, chunks, entities }) {
   }
   function hold(ks) { ks.forEach((k) => { held.add(k); glow[k] = 2; }); glowAttr.needsUpdate = true; }
   function simulate() {
+    if (!C) return;
     if (!E) { impulse(Math.floor(Math.random() * C)); return; }
     const j = Math.floor(Math.random() * E);
     fireAt(iEnt(j));
@@ -306,7 +308,7 @@ export function createScene({ canvas, stage, brain: DATA, chunks, entities }) {
   function sparks(t) {
     if (t < nextSpark || held.size) return;
     nextSpark = t + 2.5;
-    for (let k = 0; k < 5; k++) fire[Math.floor(Math.random() * C)] = t + Math.random() * 1.2;
+    for (let k = 0; C && k < 5; k++) fire[Math.floor(Math.random() * C)] = t + Math.random() * 1.2;
     fire[iHub(Math.floor(Math.random() * HN))] = t + Math.random();
     fireAttr.needsUpdate = true;
   }

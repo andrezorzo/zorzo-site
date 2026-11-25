@@ -112,7 +112,8 @@ Situation: existing.
 - The brain runs only when WebGL is available and the visitor has not asked for reduced motion. Otherwise the
   still image (`assets/poster.webp`, made by `tools/make_poster.py`) stays, the hub links show as plain links,
   and the question box, the steps panel and the answer panel work the same (F01 PRD, story S11).
-- A lost WebGL context brings the still image back.
+- A lost WebGL context brings the still image back; so does a scene that hasn't drawn its first frame after
+  6 s (a shader or driver failure).
 - If the module never runs (blocked script, old browser), an inline script shows the still image and the plain
   links after 6 s, with their text in the visitor's language.
 
@@ -121,7 +122,10 @@ Situation: existing.
 Situation: existing.
 
 - **Production:** the front reads `data/manifest.json` and the folder it names, published by the ingest.
-- **Locally:** `data/` is a copy of the API's `DATA_DIR` (git-ignored). Without it, and only on a local host,
+  Without it (before the first publish, or a failed request) the corpus is empty: the brain has no chunk
+  points and every question finds no sources, but the page works.
+- **Locally:** `data/` is a copy of the API's `DATA_DIR` (git-ignored). When its manifest is missing (404),
+  and only on a local host,
   the front reads `demo-data/`: the prototype's corpus (127 chunks of the résumé, the Prosa README, the
   GitHub profile and the first site spec) converted to the published format by
   `tools/convert_mock_corpus.py`, so the brain looks as it does today until the real corpus exists.
@@ -139,4 +143,6 @@ Situation: existing.
 ## 7. Open questions
 
 - Deploy (S3 sync excluding `demo-data/`, `tests/`, `tools/`, `node_modules/`, and the `index.html`
-  invalidation) is planned with the deploy feature.
+  invalidation) is planned with the deploy feature. The modules have no version in their names, so the deploy
+  must keep a visitor from mixing old and new modules (no-cache on `assets/js/`, or versioned paths): a
+  decision for that feature.
