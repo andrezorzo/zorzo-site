@@ -41,7 +41,6 @@ export function startAsk({ scene: brain, stage, ask, published, health }) {
     const w = tele.offsetWidth, h = tele.offsetHeight;
     if (portrait) {   // above the box, wherever the safe area and the examples put it
       const boxTop = $("ask").getBoundingClientRect().top - stage.getBoundingClientRect().top;
-      tele.style.maxHeight = `${Math.max(80, boxTop - 40)}px`;   // a long list scrolls instead of covering the box
       tele.style.transform = `translate(10px, ${Math.max(8, boxTop - h - 32)}px)`; return;
     }
     const ex = below.offsetHeight;   // the box sits above the notice and the examples

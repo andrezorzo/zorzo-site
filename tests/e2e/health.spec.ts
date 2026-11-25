@@ -29,6 +29,15 @@ test("shows the degraded notice from health", async ({ page }) => {
   await expect(page.locator("#q")).toBeEnabled();
 });
 
+test("a stream after search-only mode checks health again", async ({ page }) => {
+  await serveHealth(page, 200, { ...healthy, mode: "degraded" });
+  await page.goto("/");
+  await expect(page.locator("#askNote")).toHaveText(/Search-only mode/);
+  await serveHealth(page, 200, healthy);   // the models are back
+  await askQuestion(page, "Which cloud services does he use?");
+  await expect(page.locator("#askNote")).toBeHidden();
+});
+
 test("a failed request goes offline", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("#stage")).toHaveClass(/ready/);

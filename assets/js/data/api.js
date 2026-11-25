@@ -30,14 +30,17 @@ export function sessionId() {
 
 /** "online", "degraded" (search-only mode) or "offline". Never throws. */
 export async function health() {
+  const timeout = new AbortController(), timer = setTimeout(() => timeout.abort(), HEALTH_TIMEOUT);
   try {
-    const res = await fetch("/api/healthz", { cache: "no-store", signal: AbortSignal.timeout(HEALTH_TIMEOUT) });
+    const res = await fetch("/api/healthz", { cache: "no-store", signal: timeout.signal });
     if (!res.ok) return "offline";
     const body = await res.json();
     if (body.status !== "ok") return "offline";
     return body.mode === "degraded" ? "degraded" : "online";
   } catch {
     return "offline";
+  } finally {
+    clearTimeout(timer);
   }
 }
 

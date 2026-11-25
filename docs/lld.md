@@ -86,8 +86,8 @@ LLD "Front against the API"; how this code does it:
 - A question's outcome is fresher than a health check already in flight. A question that finds the API
   unreachable sets offline at once; one that gets a stream while offline asks for a check (the API answers,
   maybe in search-only mode), and so does one while degraded. Checks never overlap: one requested during
-  another runs after it and the earlier one's result is dropped, so the state never goes back to an older
-  one. A health request that hangs past 10 s counts as offline.
+  another runs after it, and when a question's outcome came during a check, that check's result is dropped,
+  so the state never goes back to an older one. A health request that hangs past 10 s counts as offline.
 - A hit whose chunk isn't in the loaded corpus (a version activated after the page loaded) shows as a
   passage by the title the stream sends, with no text, link or brain point.
 

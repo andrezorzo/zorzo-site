@@ -10,7 +10,7 @@ const HEALTH_POLL_INTERVAL = 30_000;   // zorzo-api LLD "Values and configuratio
 
 /** Starts checking now; `state` is "online" until the first check answers. */
 export function startHealth() {
-  let state = "online", timer = 0, checking = false, again = false;
+  let state = "online", timer = 0, checking = false, again = false, superseded = false;
   const subscribers = [];
   function set(next) {
     state = next;
@@ -21,9 +21,10 @@ export function startHealth() {
   async function check() {
     if (checking) { again = true; return; }
     checking = true;
+    superseded = false;
     try {
       const next = await health();
-      if (!again) set(next);   // a question's outcome came meanwhile: the check queued after it decides
+      if (!superseded) set(next);   // a question's outcome came meanwhile: the check queued after it decides
     } finally {
       checking = false;
       if (again) { again = false; check(); }
@@ -38,8 +39,10 @@ export function startHealth() {
     /** Calls fn with every new state ("online", "degraded" or "offline"). */
     subscribe(fn) { subscribers.push(fn); },
     /** A question found the API unreachable. */
-    offline() { set("offline"); if (checking) again = true; },
-    /** A question got a stream: the API answers, and may have left (or entered) search-only mode. */
-    reached() { if (state !== "online" || checking) check(); },
+    offline() { set("offline"); if (checking) { superseded = true; again = true; } },
+    /** A question got a stream: the API answers, so offline is over, and search-only mode may be too. */
+    reached() {
+      if (checking) { superseded = true; again = true; } else if (state !== "online") check();
+    },
   };
 }
