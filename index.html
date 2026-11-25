@@ -17,11 +17,10 @@
       var q = new URLSearchParams(location.search).get("lang"); if (q === "pt" || q === "en") l = q;
       document.documentElement.dataset.lang = l; document.documentElement.lang = l === "pt" ? "pt-BR" : "en"; })();
   </script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap">
-  <link rel="stylesheet" href="assets/styles.css?v=3">
-  <script type="module" src="assets/app.js?v=1"></script>
+  <link rel="preload" href="assets/fonts/jetbrains-mono-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="assets/fonts/fonts.css">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script type="module" src="assets/js/main.js"></script>
   <noscript><style>.stage .ask, .stage .lang { display: none; } .stage .hub-list { display: flex; } #typed::before { content: "construindo sistemas inteligentes"; }</style></noscript>
 </head>
 <body>
@@ -189,37 +188,17 @@
     <footer class="foot">© <span id="yr">2026</span> André de Castro Zorzo</footer>
   </div>
   <script>
-    /* fallback without the 3D brain: no WebGL now, or the scene has not drawn after 6 s (three.js blocked,
-       script error). The poster stays and the ask box (which needs the scene) becomes plain links. */
+    /* the module never ran (blocked, old browser, script error): the still image and the plain links stay,
+       with their texts in the visitor's language */
     (function () {
-      var stage = document.getElementById("stage"), c = document.createElement("canvas"), lang = document.documentElement.dataset.lang || "pt";
+      var stage = document.getElementById("stage"), lang = document.documentElement.dataset.lang || "pt";
       document.getElementById("yr").textContent = new Date().getFullYear();
-      function fallback() {          // the module never ran: fill its texts in the visitor's language
-        stage.classList.add("no-gl");
+      setTimeout(function () {
+        if (stage.classList.contains("ready")) return;
+        stage.classList.add("no-gl", "no-js");
         document.querySelectorAll("#hubList [data-en], #role, #typed").forEach(function (el) { el.textContent = el.getAttribute("data-" + lang); });
-        document.documentElement.lang = lang === "pt" ? "pt-BR" : "en";
-      }
-      var gl = null; try { gl = c.getContext("webgl2") || c.getContext("webgl"); } catch (e) {}
-      if (!gl) fallback();
-      else setTimeout(function () { if (!stage.classList.contains("gl")) fallback(); }, 6000);
+      }, 6000);
     })();
-  </script>
-  <script>
-    // Live repo list: public, non-fork repos. Static list stays if the request fails.
-  fetch('https://api.github.com/users/andrezorzo/repos?per_page=100&sort=pushed')
-    .then(function(r){return r.ok?r.json():Promise.reject()})
-    .then(function(list){
-      var own=list.filter(function(r){return !r.fork && !r.archived && r.name.toLowerCase()!=='andrezorzo'});
-      if(!own.length) return;
-      var ul=document.getElementById('repos'); ul.textContent='';
-      own.forEach(function(r){
-        var li=document.createElement('li');
-        var a=document.createElement('a'); a.className='repo-name'; a.href=r.html_url; a.textContent=r.name;
-        var d=document.createElement('span'); d.className='desc'; d.textContent=r.description||'';
-        var t=document.createElement('span'); t.className='lang-tag'; t.textContent=r.language||'';
-        li.append(a,d,t); ul.appendChild(li);
-      });
-    }).catch(function(){});
   </script>
 </body>
 </html>

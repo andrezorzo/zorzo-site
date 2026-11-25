@@ -1,0 +1,7 @@
+node_modules/
+test-results/
+playwright-report/
+# a local copy of the API's DATA_DIR (AGENTS.md, "Commands"); production serves data/ from the bucket
+data/
+# the source mesh of tools/build_brain.py (43 MB, CC BY-SA 4.0), downloaded on demand
+tools/src/
