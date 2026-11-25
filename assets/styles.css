@@ -86,6 +86,8 @@ html { scroll-behavior: smooth; }
 .stage { --ex: 0px; }
 .ask-below { left: 50%; bottom: calc(40 * var(--px)); transform: translateX(-50%); z-index: 6; width: min(560px, calc(100vw - 32px)); font-size: 13.5px; }
 .ask-note { margin: 0 0 4px; color: var(--amber); }
+/* the invisible bot-check widget: it renders an iframe that must never take room or show */
+.turnstile { position: absolute; width: 0; height: 0; overflow: hidden; }
 .ask-examples { margin: 0; }
 .ask-examples button { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .has-answer .ask-examples, .stage.offline .ans-examples { visibility: hidden; }

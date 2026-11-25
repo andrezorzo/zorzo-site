@@ -1,5 +1,5 @@
 // The question box, the steps panel (telemetry), the token flight into the brain and the answer panel.
-// Answers come only from `ask(question, {signal})`, which yields the stream events of the API (zorzo-api LLD
+// Answers come only from `ask(question, {signal, token})` (the token from the bot check, see `gated`), which yields the stream events of the API (zorzo-api LLD
 // "Stream events"); the brain, when there is one, only reacts to them. Without the brain everything here works
 // the same, minus the effects (F01 PRD, story S11).
 
@@ -14,12 +14,13 @@ const flightDur = (n) => 950 + n * 40;
 
 /**
  * @param scene the brain's controls, or null without 3D
- * @param ask (question, {signal}) → async iterator of stream events
+ * @param ask (question, {signal, token}) → async iterator of stream events
  * @param published { corpus, examples, entities }
  * @param health the API's health (ui/health.js): its state drives the box, and a question that finds the API
  *   unreachable reports it
+ * @param bot the bot check (ui/turnstile.js): `token()` hands out a fresh, single-use token
  */
-export function startAsk({ scene: brain, stage, ask, published, health }) {
+export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
   let scene = brain;   // becomes null if the brain fails: from then on, the path without 3D
   const chunks = published.corpus.chunks;
   const byId = new Map(chunks.map((c, k) => [c.id, k]));
@@ -27,6 +28,7 @@ export function startAsk({ scene: brain, stage, ask, published, health }) {
   const ans = $("answer"), ansText = $("ansText"), ansSrc = $("ansSources");
   const citeLine = $("citeLine"), citeDot = $("citeDot"), citeSvg = $("cite");
   const below = $("askBelow"), note = $("askNote"), exList = $("askExamples");   // under the box
+  const inputError = $("askError");   // what to fix in the question (422), right under the box
   let current = null;            // AbortController of the question in flight
   let teleOn = false, teleAnchor = [], citeFrom = null, citeK = -1;
   const flights = [];
@@ -129,8 +131,9 @@ export function startAsk({ scene: brain, stage, ask, published, health }) {
   }
   function showBlocked() { ansText.textContent = t().blocked; ansText.className = "ans-text warn"; }
   /** A question that got no answer: the reason, and the public trace when the API sent one. */
-  function showFailure({ kind, traceId }) {
-    ansText.textContent = kind === "offline" ? t().offline : kind === "dropped" ? t().connectionLost : t().error;
+  function showFailure({ kind, traceId, retryAfter }) {
+    const reason = { offline: t().offline, dropped: t().connectionLost, bot: t().botCheck, limited: t().tryAgainIn(retryAfter) };
+    ansText.textContent = reason[kind] ?? t().error;
     ansText.className = "ans-text warn";
     if (!traceId) return;
     const note = document.createElement("p"), link = document.createElement("a");
@@ -179,6 +182,23 @@ export function startAsk({ scene: brain, stage, ask, published, health }) {
     }, n * 120));
   }
 
+  /**
+   * The question's stream, behind the bot check: a fresh token per request. A 403 gets one more try with a new
+   * token; without a token nothing is sent (zorzo-api LLD "Front against the API").
+   */
+  async function* gated(question, signal) {
+    for (let retried = false; ; retried = true) {
+      let token;
+      try { token = await bot.token(signal); } catch (err) {
+        if (signal.aborted) throw err;   // a newer question took over: not a bot-check failure
+        console.error(err); throw new AskError("bot");
+      }
+      try { yield* ask(question, { signal, token }); return; } catch (err) {
+        if (retried || !(err instanceof AskError) || err.kind !== "bot") throw err;
+      }
+    }
+  }
+
   /* ---- one question: the events drive the steps, the brain and the panel */
   async function run(question) {
     reset();
@@ -192,7 +212,7 @@ export function startAsk({ scene: brain, stage, ask, published, health }) {
     let hits = [], ks = [], blocked = null, failure = null, retrieveMs = null;
     try {
       let first = true;
-      for await (const ev of ask(question, { signal })) {
+      for await (const ev of gated(question, signal)) {
         if (signal.aborted) return;
         if (first) { first = false; health.reached(); }   // a stream: the API answers
         if (ev.kind === "stage" && ev.status === "end") {
@@ -218,6 +238,11 @@ export function startAsk({ scene: brain, stage, ask, published, health }) {
       if (failure.kind === "offline") health.offline();
       console.error(err);
     }
+    if (failure?.kind === "invalid") {   // nothing to show in the panel: the question itself needs fixing
+      hideTele();
+      inputError.textContent = t().invalidInput; inputError.hidden = false;
+      return;
+    }
     teleLine(t().latency((performance.now() - t0).toFixed(0)));
     teleLine(t().cost, "dim");
     // the answer opens once the tokens land, so the brain lights up first
@@ -237,9 +262,11 @@ export function startAsk({ scene: brain, stage, ask, published, health }) {
   function submit(question) { $("q").value = question; run(question); }
 
   $("ask").addEventListener("submit", (e) => { e.preventDefault(); const q = $("q").value.trim(); if (q) run(q); });
+  $("q").addEventListener("input", () => { inputError.hidden = true; });
   // the question in flight stops, and its effects with it
-  function reset() { current?.abort(); current = null; clearFlights(); hoverChunk(null, -1); scene?.clearHeld(); }
-  function stop() { reset(); teleOn = false; tele.hidden = true; }
+  function reset() { current?.abort(); current = null; clearFlights(); hoverChunk(null, -1); scene?.clearHeld(); inputError.hidden = true; }
+  function hideTele() { teleOn = false; tele.hidden = true; }
+  function stop() { reset(); hideTele(); }
   $("teleClose").addEventListener("click", stop);
   $("ansClose").addEventListener("click", () => { stop(); openAnswer(false); });
 
