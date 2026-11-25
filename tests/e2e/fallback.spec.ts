@@ -27,3 +27,20 @@ test.describe("with reduced motion", () => {
     await expect(page.locator("#stage")).not.toHaveClass(/(^|\s)gl(\s|$)/);
   });
 });
+
+test.describe("when the GPU drops the brain", () => {
+  test("falls back without 3D and keeps answering", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("#stage")).toHaveClass(/(^|\s)gl(\s|$)/);
+    await page.evaluate(() => {
+      const canvas = document.getElementById("scene") as HTMLCanvasElement;
+      const gl = canvas.getContext("webgl2") || canvas.getContext("webgl");
+      gl?.getExtension("WEBGL_lose_context")?.loseContext();
+    });
+    await expect(page.locator("#stage")).toHaveClass(/no-gl/);
+    await expect(page.locator("#scene")).toBeHidden();
+    await askQuestion(page, "Which cloud services does he use?");
+    await expect(page.locator("#ansSources .src").first()).toContainText("FAQ");
+    await expect(page.locator(".tok")).toHaveCount(0);
+  });
+});

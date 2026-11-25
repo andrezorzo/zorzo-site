@@ -80,6 +80,7 @@ export function startHubs(scene, stage) {
   });
   scene.onTap((hit) => { if (hit?.kind === "hub") showCard(hit.index); });
   scene.onFrame(place);
+  scene.onFail(() => { cardHub = -1; card.hidden = true; card.classList.remove("is-on"); leader.classList.remove("is-on"); });
 
   onLang(() => {
     scene.hubIds.forEach((id, j) => { labels[j].textContent = t().hubs[id].title; });

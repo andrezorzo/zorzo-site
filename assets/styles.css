@@ -238,7 +238,8 @@ svg.cite-lines circle { fill: none; stroke: var(--amber); stroke-width: 1.3; }
 .stage.has-answer .hub-list { display: none; }
 /* the hub links sit above the question box */
 .stage.no-gl:not(.no-js) .hub-list { bottom: calc(40 * var(--px) + 62px); }
-.stage.no-gl .scene { cursor: default; }
+/* a failed brain may leave its last frame on the canvas: hide it, and stop it from taking the pointer */
+.stage.no-gl .scene { visibility: hidden; pointer-events: none; }
 @media (max-aspect-ratio: 17/20) {
   .stage { --u: min(46vw, 27svh); --cx: 50vw; --cy: 31svh; }
   .hub-list { left: 14px; right: 14px; bottom: calc(22px + env(safe-area-inset-bottom)); justify-content: center; }

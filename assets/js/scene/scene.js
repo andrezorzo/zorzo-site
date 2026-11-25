@@ -31,15 +31,25 @@ export function createScene({ canvas, stage, brain: DATA, chunks, entities }) {
   const entityPoints = placeEntities(entities, anchors);
 
   let firstFrame = false;
-  // the GPU can drop the context (iOS under memory pressure): the still image comes back
-  canvas.addEventListener("webglcontextlost", () => { stage.classList.remove("gl"); stage.classList.add("no-gl"); });
+  // Any failure ends the brain for good: the GPU dropping the context (iOS under memory pressure), a shader it
+  // can't compile, or an exception in the frame loop. The loop stops, the canvas hides (.no-gl), and the
+  // interface is told so it continues without the scene.
+  let failed = false;
+  const failFns = [];
+  function fail() {
+    if (failed) return;
+    failed = true;
+    stage.classList.remove("gl"); stage.classList.add("no-gl");
+    failFns.forEach((fn) => fn());
+  }
+  canvas.addEventListener("webglcontextlost", fail);
   const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: !COARSE, powerPreference: "high-performance" });
   renderer.setClearColor(0x000000, 0);
-  // A shader this GPU can't compile, or a render that throws, ends the brain: the still image and the plain
-  // links come back (three.js logs shader errors instead of throwing, hence the hook).
-  let failed = false;
-  const fail = () => { failed = true; stage.classList.remove("gl"); stage.classList.add("no-gl"); };
-  renderer.debug.onShaderError = fail;
+  // three.js calls this instead of logging the error itself, so the logs are written here
+  renderer.debug.onShaderError = (gl, program, vs, fs) => {
+    console.error("brain shader failed", gl.getProgramInfoLog(program), gl.getShaderInfoLog(vs), gl.getShaderInfoLog(fs));
+    fail();
+  };
   let tier = (IOS || COARSE || (navigator.hardwareConcurrency || 8) <= 4) ? 1 : 2;
   if (params.has("tier")) tier = Math.max(0, Math.min(2, +params.get("tier")));
 
@@ -326,8 +336,12 @@ export function createScene({ canvas, stage, brain: DATA, chunks, entities }) {
   let onScreen = true;
   new IntersectionObserver(([e]) => { onScreen = e.isIntersecting; }).observe(stage);
   function loop(now) {
+    if (failed) return;   // no next frame: the loop ends
     requestAnimationFrame(loop);
     if (document.hidden || !onScreen) { last = now; return; }
+    try { frame(now); } catch (err) { console.error(err); fail(); }
+  }
+  function frame(now) {
     fps.n++;
     if (now - fps.since > 2000) {
       fps.v = fps.n * 1000 / (now - fps.since); fps.n = 0; fps.since = now;
@@ -343,9 +357,8 @@ export function createScene({ canvas, stage, brain: DATA, chunks, entities }) {
     pivot.rotation.set(tilt.y * 0.35, tilt.x * 0.6, 0);
     brain.quaternion.copy(dragQ).multiply(swayQ);
     sparks(t);
-    if (failed) return;
-    try { renderer.render(world, camera); } catch (err) { console.error(err); fail(); return; }
-    if (failed) return;
+    renderer.render(world, camera);
+    if (failed) return;   // a shader failed during this render
     if (!firstFrame) { firstFrame = true; stage.classList.add("gl"); stage.classList.remove("no-gl"); }   // still image fades out
     {
       const tg = targetGeo(), e = 1 - Math.pow(0.02, dt);
@@ -382,6 +395,8 @@ export function createScene({ canvas, stage, brain: DATA, chunks, entities }) {
     onHover: (fn) => hoverFns.push(fn),
     onTap: (fn) => tapFns.push(fn),
     onFrame: (fn) => frameFns.push(fn),
+    /** The brain stopped for good (see fail): continue without it. */
+    onFail: (fn) => failFns.push(fn),
     poke: () => { lastInput = performance.now(); },
     fire: fireAt,
     impulse,

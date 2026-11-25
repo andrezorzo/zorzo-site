@@ -7,16 +7,17 @@ import { currentLang, onLang, t } from "../i18n.js";
 import { namedIn, term, words } from "../text.js";
 import { $, REDUCED } from "../util.js";
 
+const MAX_TOKENS = 7;                       // words that fly from the box
+const flightStart = (n) => n * 140;          // ms after the question, per word
+const flightDur = (n) => 950 + n * 40;
+
 /**
  * @param scene the brain's controls, or null without 3D
  * @param ask (question, {signal}) → async iterator of stream events
  * @param published { corpus, examples, entities }
  */
-const MAX_TOKENS = 7;                       // words that fly from the box
-const flightStart = (n) => n * 140;          // ms after the question, per word
-const flightDur = (n) => 950 + n * 40;
-
-export function startAsk({ scene, stage, ask, published }) {
+export function startAsk({ scene: brain, stage, ask, published }) {
+  let scene = brain;   // becomes null if the brain fails: from then on, the path without 3D
   const chunks = published.corpus.chunks;
   const byId = new Map(chunks.map((c, k) => [c.id, k]));
   const tele = $("telemetry"), teleList = tele.querySelector("ol");
@@ -30,8 +31,6 @@ export function startAsk({ scene, stage, ask, published }) {
   function teleLine(txt, cls) { const li = document.createElement("li"); li.textContent = txt; if (cls) li.className = cls; teleList.append(li); }
   function placeTele() {
     if (!scene || !teleOn || !teleAnchor.length) return;
-    // the scene lost its WebGL context: the panel takes the fixed corner of the page without 3D
-    if (stage.classList.contains("no-gl")) { tele.style.transform = ""; return; }
     const { W, H, s, portrait } = scene.size();
     let sx = 0, sy = 0; teleAnchor.forEach((i) => { const [x, y] = scene.screenOf(i); sx += x; sy += y; });
     sx /= teleAnchor.length; sy /= teleAnchor.length;
@@ -115,6 +114,7 @@ export function startAsk({ scene, stage, ask, published }) {
     citeDot.setAttribute("cx", x); citeDot.setAttribute("cy", y);
   }
   function startPanel(question) {
+    ans.querySelectorAll(".ans-note, .ans-examples").forEach((el) => el.remove());   // left by a previous answer
     $("ansQ").textContent = question;
     ansText.replaceChildren(); ansSrc.replaceChildren();
     ansText.className = "ans-text";
@@ -241,5 +241,8 @@ export function startAsk({ scene, stage, ask, published }) {
     rotatePlaceholder();
   });
 
-  if (scene) scene.onFrame((now) => { stepFlights(now); placeTele(); placeCite(); });
+  if (scene) {
+    scene.onFrame((now) => { stepFlights(now); placeTele(); placeCite(); });
+    scene.onFail(() => { scene = null; clearFlights(); hoverChunk(null, -1); tele.style.transform = ""; });
+  }
 }
