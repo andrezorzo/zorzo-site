@@ -12,6 +12,10 @@ import { $, REDUCED } from "../util.js";
  * @param ask (question, {signal}) → async iterator of stream events
  * @param published { corpus, examples, entities }
  */
+const MAX_TOKENS = 7;                       // words that fly from the box
+const flightStart = (n) => n * 140;          // ms after the question, per word
+const flightDur = (n) => 950 + n * 40;
+
 export function startAsk({ scene, stage, ask, published }) {
   const chunks = published.corpus.chunks;
   const byId = new Map(chunks.map((c, k) => [c.id, k]));
@@ -47,10 +51,10 @@ export function startAsk({ scene, stage, ask, published }) {
     // the answer never waits on frames: a hidden tab or a stalled scene still gets it after the longest flight
     let fired = false;
     const onDone = () => { if (!fired) { fired = true; landed(); } };
-    setTimeout(onDone, 950 + 7 * 180 + 300);
+    setTimeout(onDone, flightStart(MAX_TOKENS - 1) + flightDur(MAX_TOKENS - 1) + 300);
     if (!scene) { onDone(); return; }
     const box = $("q").getBoundingClientRect(), sr = stage.getBoundingClientRect();
-    const ws = words(question).slice(0, 7);
+    const ws = words(question).slice(0, MAX_TOKENS);
     if (!ws.length) { onDone(); return; }
     const hitWords = hits.map((k) => new Set(words(`${chunks[k].heading} ${chunks[k].text}`).map(term)));
     let left = ws.length;
@@ -62,7 +66,7 @@ export function startAsk({ scene, stage, ask, published }) {
       el.className = "tok" + (blocked ? " blocked" : target < 0 ? " miss" : "");
       el.textContent = w; stage.append(el);
       const x0 = box.left - sr.left + 18 + (box.width - 36) * (ws.length > 1 ? n / (ws.length - 1) : 0.5), y0 = box.top - sr.top;
-      flights.push({ el, x0, y0, target, t0: performance.now() + n * 140, dur: 950 + n * 40, done: false,
+      flights.push({ el, x0, y0, target, t0: performance.now() + flightStart(n), dur: flightDur(n), done: false,
         land() {
           if (this.target >= 0) { scene.fire(this.target); if (this.target < scene.chunkCount) scene.impulse(this.target, 1, true); }
           if (--left === 0) onDone();
@@ -120,6 +124,7 @@ export function startAsk({ scene, stage, ask, published }) {
   function showError() { ansText.textContent = t().error; ansText.className = "ans-text warn"; }
   function showNoSources() {
     ansText.textContent = t().noSources;
+    if (!examplesInLang().length) return;
     const hint = document.createElement("p"); hint.className = "ans-note"; hint.textContent = t().tryExamples;
     const list = document.createElement("ul"); list.className = "ans-examples";
     examplesInLang().forEach((ex) => {

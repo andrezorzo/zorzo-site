@@ -8,7 +8,7 @@ const LOCAL = ["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);
 
 // Production serves data/ from the bucket. Locally, data/ is a copy of the API's DATA_DIR; without it, the demo
 // copy of the prototype's corpus keeps the brain as it looks today (zorzo-site LLD, "Development data").
-// Only a missing manifest falls back, so a broken one still shows as an error.
+// Only a missing manifest falls back to the demo; any other failure leaves an empty corpus (loadPublished).
 async function manifest() {
   try {
     return await fetchJson("data/manifest.json");
@@ -36,8 +36,8 @@ let loading = null;
  */
 export function loadPublished() {
   loading ??= (async () => {
-    const entitiesP = fetchJson("assets/data/entities.json");   // site data: no need to wait for the manifest
-    entitiesP.catch(() => {});   // if the manifest fails first, that is the error reported
+    // site data, so no need to wait for the manifest; without it the brain only loses its entity points
+    const entitiesP = fetchJson("assets/data/entities.json").catch((err) => { console.error(err); return []; });
     const m = await manifest();
     const [corpus, examples, entities] = await Promise.all([fetchJson(`${m.path}corpus.json`), fetchJson(`${m.path}examples.json`), entitiesP]);
     return { corpus, examples, entities: linkEntities(entities, corpus.chunks) };

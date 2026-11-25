@@ -112,8 +112,8 @@ Situation: existing.
 - The brain runs only when WebGL is available and the visitor has not asked for reduced motion. Otherwise the
   still image (`assets/poster.webp`, made by `tools/make_poster.py`) stays, the hub links show as plain links,
   and the question box, the steps panel and the answer panel work the same (F01 PRD, story S11).
-- A lost WebGL context brings the still image back; so does a scene that hasn't drawn its first frame after
-  6 s (a shader or driver failure).
+- A lost WebGL context, a shader the GPU can't compile, or a render that throws brings the still image and
+  the plain links back.
 - If the module never runs (blocked script, old browser), an inline script shows the still image and the plain
   links after 6 s, with their text in the visitor's language.
 

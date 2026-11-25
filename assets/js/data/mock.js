@@ -7,8 +7,8 @@ import { norm } from "../util.js";
 import { loadPublished } from "./published.js";
 
 const MAX_PASSAGES = 6;   // zorzo-api LLD, DEGRADED_MAX_PASSAGES
-// whole phrases, so "has he ignored an alert?" is a question, not an attack
-const OVERRIDE = /\b(ignore (all|any|the|your|previous)|ignora (as|suas|todas)|disregard|system prompt|prompt do sistema|jailbreak|suas instrucoes|your instructions|pretend (to|you)|finja (que|ser))\b/;
+// The prototype's guard, kept as it was: broad on purpose, and gone with the mock (the real gate is F01-T04).
+const OVERRIDE = /(ignore|ignora|disregard|system prompt|prompt do sistema|jailbreak|suas instru|your instruc|pretend|finja)/;
 
 let index = null;
 function buildIndex(chunks) {

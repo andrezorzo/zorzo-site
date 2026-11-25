@@ -35,6 +35,11 @@ export function createScene({ canvas, stage, brain: DATA, chunks, entities }) {
   canvas.addEventListener("webglcontextlost", () => { stage.classList.remove("gl"); stage.classList.add("no-gl"); });
   const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: !COARSE, powerPreference: "high-performance" });
   renderer.setClearColor(0x000000, 0);
+  // A shader this GPU can't compile, or a render that throws, ends the brain: the still image and the plain
+  // links come back (three.js logs shader errors instead of throwing, hence the hook).
+  let failed = false;
+  const fail = () => { failed = true; stage.classList.remove("gl"); stage.classList.add("no-gl"); };
+  renderer.debug.onShaderError = fail;
   let tier = (IOS || COARSE || (navigator.hardwareConcurrency || 8) <= 4) ? 1 : 2;
   if (params.has("tier")) tier = Math.max(0, Math.min(2, +params.get("tier")));
 
@@ -338,7 +343,9 @@ export function createScene({ canvas, stage, brain: DATA, chunks, entities }) {
     pivot.rotation.set(tilt.y * 0.35, tilt.x * 0.6, 0);
     brain.quaternion.copy(dragQ).multiply(swayQ);
     sparks(t);
-    renderer.render(world, camera);
+    if (failed) return;
+    try { renderer.render(world, camera); } catch (err) { console.error(err); fail(); return; }
+    if (failed) return;
     if (!firstFrame) { firstFrame = true; stage.classList.add("gl"); stage.classList.remove("no-gl"); }   // still image fades out
     {
       const tg = targetGeo(), e = 1 - Math.pow(0.02, dt);
