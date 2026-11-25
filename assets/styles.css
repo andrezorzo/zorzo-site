@@ -111,7 +111,7 @@ html { scroll-behavior: smooth; }
 .telemetry header { display: flex; justify-content: space-between; color: var(--lilac-dim); font-size: calc(10.5 * var(--px)); letter-spacing: .06em; }
 .telemetry header button { border: 0; background: none; color: var(--lilac-dim); cursor: pointer; font: inherit; font-size: 14px; line-height: 1; }
 .telemetry ol { list-style: none; margin: 4px 0 0; padding: 0; }
-.telemetry li { animation: tl-in .25s ease both; overflow-wrap: anywhere; }
+.telemetry li { animation: tl-in .25s ease both; }
 .telemetry li::before { content: "› "; color: var(--mint); }
 .telemetry li.warn { color: var(--amber); }
 .telemetry li.dim { color: var(--lilac-dim); }
@@ -246,15 +246,7 @@ svg.cite-lines circle { fill: none; stroke: var(--amber); stroke-width: 1.3; }
 .stage.no-js .ask, .stage.no-js .ask-below, .stage.no-js .lang { display: none; }
 /* without the brain the steps panel has no region to follow: it sits in the top-right corner, under the language switch */
 .stage.no-gl .telemetry { left: auto; right: 16px; top: 64px; }
-/* portrait: right above the box, with or without the brain; only its list scrolls, so the close button stays */
-@media (max-aspect-ratio: 17/20) {
-  .telemetry, .stage.no-gl .telemetry {
-    --above-box: calc(14px + env(safe-area-inset-bottom) + var(--ex) + 50px + 12px);
-    left: 10px; right: auto; top: auto; bottom: var(--above-box); max-height: calc(100% - var(--above-box) - 8px);
-    display: flex; flex-direction: column;
-  }
-  .telemetry ol { min-height: 0; overflow-y: auto; }
-}
+
 /* the answer panel takes the space of the hub links while it is open */
 .stage.has-answer .hub-list { display: none; }
 /* the hub links sit above the question box */

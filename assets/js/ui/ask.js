@@ -32,20 +32,15 @@ export function startAsk({ scene: brain, stage, ask, published, health }) {
   const flights = [];
 
   /* ---- steps panel, next to the region the answer comes from */
-  function teleLine(txt, cls) {
-    // when the list scrolls (portrait), it follows the newest step unless the visitor scrolled up to read
-    const atEnd = teleList.scrollHeight - teleList.scrollTop - teleList.clientHeight < 4;
-    const li = document.createElement("li"); li.textContent = txt; if (cls) li.className = cls; teleList.append(li);
-    if (atEnd) teleList.scrollTop = teleList.scrollHeight;
-  }
+  function teleLine(txt, cls) { const li = document.createElement("li"); li.textContent = txt; if (cls) li.className = cls; teleList.append(li); }
   function placeTele() {
     if (!scene || !teleOn || !teleAnchor.length) return;
     const { W, H, s, portrait } = scene.size();
-    if (portrait) { tele.style.transform = ""; return; }   // CSS puts it right above the box
     let sx = 0, sy = 0; teleAnchor.forEach((i) => { const [x, y] = scene.screenOf(i); sx += x; sy += y; });
     sx /= teleAnchor.length; sy /= teleAnchor.length;
     const w = tele.offsetWidth, h = tele.offsetHeight;
     const ex = below.offsetHeight;   // the box sits above the notice and the examples
+    if (portrait) { tele.style.transform = `translate(10px, ${Math.max(8, H - h - 96 - ex)}px)`; return; }
     const openA = !ans.hidden, minLeft = openA ? ans.getBoundingClientRect().right + 24 : 8;
     let left = sx + 120 * s, top = sy - h / 2;
     left = Math.max(minLeft, left);
