@@ -103,6 +103,7 @@ html { scroll-behavior: smooth; }
 /* telemetry, next to the active region */
 .telemetry {
   left: 0; top: 0; z-index: 5; min-width: calc(250 * var(--px)); will-change: transform;
+  overflow-y: auto;   /* in portrait its height is capped above the box (ui/ask.js) */
   padding: calc(8 * var(--px)) calc(12 * var(--px)); font-size: calc(11.5 * var(--px)); line-height: 1.6; color: #BFD9DC;
   border-left: 1px solid rgba(216, 254, 254, .45); background: linear-gradient(90deg, rgba(14, 22, 40, .62) 0, rgba(12, 18, 34, .5) 80%, rgba(12, 18, 34, .15));
   backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px);   /* glass: the brain stays visible, blurred, so labels behind do not compete with the text */

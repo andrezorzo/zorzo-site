@@ -92,10 +92,16 @@ test.describe("a question's outcome beats an older health check", () => {
     await page.route(isAsk, (route) => route.abort("connectionrefused"));
     await askQuestion(page, "Which cloud services does he use?");
     await expect(page.locator("#q")).toBeDisabled();
+    // from now on, record whether the box ever comes back: the old check's "online" must never reach the page
+    await page.evaluate(() => {
+      const q = document.getElementById("q") as HTMLInputElement;
+      new MutationObserver(() => { if (!q.disabled) document.body.dataset.reopened = "yes"; }).observe(q, { attributes: true });
+    });
     const recheck = page.waitForResponse((r) => isHealth(new URL(r.url())) && r.status() === 503);
     release({ status: 200, body: healthy });
     await recheck;   // the old check said online; the one after the failure says offline, and decides
     await expect(page.locator("#q")).toBeDisabled();
+    expect(await page.evaluate(() => document.body.dataset.reopened)).toBeUndefined();
     await expect(page.locator("#askNote")).toHaveText(/unreachable/);
   });
 });

@@ -85,14 +85,16 @@ LLD "Front against the API"; how this code does it:
   regains focus or becomes visible. There is no polling while online.
 - A question's outcome is fresher than a health check already in flight. A question that finds the API
   unreachable sets offline at once; one that gets a stream while offline asks for a check (the API answers,
-  maybe in search-only mode). Checks never overlap: one requested during another runs after it, so the last
-  state comes from a check that started after the question's outcome.
+  maybe in search-only mode), and so does one while degraded. Checks never overlap: one requested during
+  another runs after it and the earlier one's result is dropped, so the state never goes back to an older
+  one. A health request that hangs past 10 s counts as offline.
 - A hit whose chunk isn't in the loaded corpus (a version activated after the page loaded) shows as a
   passage by the title the stream sends, with no text, link or brain point.
 
 **Example questions.** A list under the question box, in the interface language, hidden while an answer is
-open; clicking one asks it. While offline every example list is hidden, the answer panel's too. The box, the intro and the hub links sit above the list by its
-measured height (`--ex`), which stays reserved while an answer is open, so nothing moves when one opens.
+open; clicking one asks it. While offline every example list is hidden, the answer panel's too. The box, the
+intro and the hub links sit above the list by its measured height (`--ex`), which stays reserved while an
+answer is open, so nothing moves when one opens.
 
 ## 3. Brain data
 

@@ -1,8 +1,8 @@
 // The API's health drives the page's state (zorzo-api LLD "Front against the API", "Health"): checked on load;
 // while offline, again every HEALTH_POLL_INTERVAL and when the tab regains focus, back to online by itself.
 // No polling while online. A question's outcome is fresher than a check already in flight: a question that finds
-// the API unreachable sets offline at once, and one that gets a stream while offline asks for a check; either way
-// a check in flight is followed by one more, so the last state comes from a check that started after it.
+// the API unreachable sets offline at once, and one that gets a stream while offline or degraded asks for a check.
+// A check in flight then has its result dropped and one more runs, so the state never goes back to an older one.
 
 import { health } from "../data/api.js";
 
@@ -21,7 +21,10 @@ export function startHealth() {
   async function check() {
     if (checking) { again = true; return; }
     checking = true;
-    try { set(await health()); } finally {
+    try {
+      const next = await health();
+      if (!again) set(next);   // a question's outcome came meanwhile: the check queued after it decides
+    } finally {
       checking = false;
       if (again) { again = false; check(); }
     }
@@ -36,7 +39,7 @@ export function startHealth() {
     subscribe(fn) { subscribers.push(fn); },
     /** A question found the API unreachable. */
     offline() { set("offline"); if (checking) again = true; },
-    /** A question got a stream: the API answers, though maybe in search-only mode. */
-    reached() { if (state === "offline" || checking) check(); },
+    /** A question got a stream: the API answers, and may have left (or entered) search-only mode. */
+    reached() { if (state !== "online" || checking) check(); },
   };
 }

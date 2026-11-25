@@ -6,6 +6,7 @@ const SESSION_KEY = "conversation";
 const TURNSTILE = "unverified";   // the API only checks it is non-empty until F01-T04 adds the widget
 // 503 from the API; 502 and 504 from CloudFront or Caddy when the API doesn't answer (LLD "Front against the API")
 const OFFLINE_STATUS = new Set([502, 503, 504]);
+const HEALTH_TIMEOUT = 10_000;   // a check that hangs counts as offline, so the next one can run
 
 /**
  * Why a question got no answer: offline (502, 503, 504 or no network), dropped (the stream ended before `done`), failed
@@ -30,7 +31,7 @@ export function sessionId() {
 /** "online", "degraded" (search-only mode) or "offline". Never throws. */
 export async function health() {
   try {
-    const res = await fetch("/api/healthz", { cache: "no-store" });
+    const res = await fetch("/api/healthz", { cache: "no-store", signal: AbortSignal.timeout(HEALTH_TIMEOUT) });
     if (!res.ok) return "offline";
     const body = await res.json();
     if (body.status !== "ok") return "offline";
