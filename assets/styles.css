@@ -230,7 +230,7 @@ svg.cite-lines circle { fill: none; stroke: var(--amber); stroke-width: 1.3; }
 }
 .hub-list a:hover, .hub-list a:focus-visible { border-color: rgba(216, 254, 254, .6); }
 .stage.no-gl .hub-list { display: flex; }
-.stage.no-gl .labels { display: none; }
+.stage.no-gl .labels, .stage.no-gl .card, .stage.no-gl .leader { display: none; }
 .stage.no-js .ask, .stage.no-js .lang { display: none; }
 /* without the brain the steps panel has no region to follow: it sits in the top-right corner, under the language switch */
 .stage.no-gl .telemetry { left: auto; right: 16px; top: 64px; }

@@ -40,7 +40,7 @@ export function createScene({ canvas, stage, brain: DATA, chunks, entities }) {
     if (failed) return;
     failed = true;
     stage.classList.remove("gl"); stage.classList.add("no-gl");
-    failFns.forEach((fn) => fn());
+    failFns.forEach((fn) => { try { fn(); } catch (err) { console.error(err); } });
   }
   canvas.addEventListener("webglcontextlost", fail);
   const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: !COARSE, powerPreference: "high-performance" });
@@ -366,7 +366,8 @@ export function createScene({ canvas, stage, brain: DATA, chunks, entities }) {
         g.cx += (tg.cx - g.cx) * e; g.cy += (tg.cy - g.cy) * e; g.u += (tg.u - g.u) * e; applyView();
       }
     }
-    frameFns.forEach((fn) => fn(now));
+    // an interface bug costs that frame's overlay, never the brain
+    frameFns.forEach((fn) => { try { fn(now); } catch (err) { console.error(err); } });
     // background glow sits behind the brain and drifts against the tilt (parallax), so it moves with the scene
     {
       const bx = g.cx - tilt.x * g.u * 0.35, by = g.cy - tilt.y * g.u * 0.25, br = g.u * 2.1;
@@ -396,7 +397,7 @@ export function createScene({ canvas, stage, brain: DATA, chunks, entities }) {
     onTap: (fn) => tapFns.push(fn),
     onFrame: (fn) => frameFns.push(fn),
     /** The brain stopped for good (see fail): continue without it. */
-    onFail: (fn) => failFns.push(fn),
+    onFail: (fn) => { if (failed) fn(); else failFns.push(fn); },
     poke: () => { lastInput = performance.now(); },
     fire: fireAt,
     impulse,
