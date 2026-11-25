@@ -73,7 +73,8 @@ LLD "Front against the API"; how this code does it:
   `data:` lines up to a blank line, `\r\n` or `\n` endings, `: ping` comments skipped, a frame split across
   network chunks reassembled. No library: the format is a few lines, and nothing loads from another origin.
   Each frame becomes `{kind, ...data}`.
-- `ask()` throws `AskError` with a kind the interface turns into a message: `offline` (`503` or no network;
+- `ask()` throws `AskError` with a kind the interface turns into a message: `offline` (`502`, `503`, `504` or
+  no network;
   it also sets the page offline), `dropped` (the stream ended before `done`), `failed` (any other status,
   a frame that isn't JSON, or an `error` event, with the trace id of the `done` after it, which the
   interface links). An abort (a new question) throws the browser's `AbortError`, which the interface ignores.

@@ -40,10 +40,21 @@ test("a failed request goes offline", async ({ page }) => {
   await expect(page.locator("#ansText")).toHaveText("The backend is unreachable. The box comes back by itself when it returns.");
 });
 
-test("an unavailable API (503) goes offline", async ({ page }) => {
+for (const status of [502, 503, 504]) {   // 503 from the API; 502 and 504 from the edge when the API is down
+  test(`an unavailable API (${status}) goes offline`, async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator("#stage")).toHaveClass(/ready/);
+    await page.route(isAsk, (route) => route.fulfill({ status, body: "" }));
+    await askQuestion(page, "Which cloud services does he use?");
+    await expect(page.locator("#q")).toBeDisabled();
+  });
+}
+
+test("any other status shows the generic message and stays online", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("#stage")).toHaveClass(/ready/);
-  await page.route(isAsk, (route) => route.fulfill({ status: 503, json: { error: { code: "unavailable" } } }));
+  await page.route(isAsk, (route) => route.fulfill({ status: 500, body: "" }));
   await askQuestion(page, "Which cloud services does he use?");
-  await expect(page.locator("#q")).toBeDisabled();
+  await expect(page.locator("#ansText")).toHaveText("Something went wrong. Ask again.");
+  await expect(page.locator("#q")).toBeEnabled();
 });

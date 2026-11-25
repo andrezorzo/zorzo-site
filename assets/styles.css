@@ -88,7 +88,7 @@ html { scroll-behavior: smooth; }
 .ask-note { margin: 0 0 4px; color: var(--amber); }
 .ask-examples { margin: 0; }
 .ask-examples button { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.has-answer .ask-examples, .ask-examples.off { visibility: hidden; }
+.has-answer .ask-examples, .stage.offline .ans-examples { visibility: hidden; }
 
 /* tokens in flight */
 .tok {

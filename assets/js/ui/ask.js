@@ -40,7 +40,10 @@ export function startAsk({ scene: brain, stage, ask, published, health }) {
     sx /= teleAnchor.length; sy /= teleAnchor.length;
     const w = tele.offsetWidth, h = tele.offsetHeight;
     const ex = below.offsetHeight;   // the box sits above the notice and the examples
-    if (portrait) { tele.style.transform = `translate(10px, ${H - h - 96 - ex}px)`; return; }
+    if (portrait) {   // above the box, wherever the safe area and the examples put it
+      const boxTop = $("ask").getBoundingClientRect().top - stage.getBoundingClientRect().top;
+      tele.style.transform = `translate(10px, ${boxTop - h - 32}px)`; return;
+    }
     const openA = !ans.hidden, minLeft = openA ? ans.getBoundingClientRect().right + 24 : 8;
     let left = sx + 120 * s, top = sy - h / 2;
     left = Math.max(minLeft, left);
@@ -190,8 +193,10 @@ export function startAsk({ scene: brain, stage, ask, published, health }) {
     teleLine(t().query(words(question).length, question.length));
     let hits = [], ks = [], blocked = null, failure = null, retrieveMs = null;
     try {
+      let first = true;
       for await (const ev of ask(question, { signal })) {
         if (signal.aborted) return;
+        if (first) { first = false; health.reached(); }   // a stream: the API answers
         if (ev.kind === "stage" && ev.status === "end") {
           if (ev.name === "retrieve") { retrieveMs = ev.ms; continue; }   // shown with the hits
           teleLine(ev.name === "guard" ? t().guardOk : t().stage(ev.name, ev.ms));
@@ -231,8 +236,7 @@ export function startAsk({ scene: brain, stage, ask, published, health }) {
       }
     });
   }
-  // an example in the answer panel stays clickable after the box is disabled: offline, it asks nothing
-  function submit(question) { if (health.state === "offline") return; $("q").value = question; run(question); }
+  function submit(question) { $("q").value = question; run(question); }
 
   $("ask").addEventListener("submit", (e) => { e.preventDefault(); const q = $("q").value.trim(); if (q) run(q); });
   // the question in flight stops, and its effects with it
@@ -257,7 +261,7 @@ export function startAsk({ scene: brain, stage, ask, published, health }) {
   function setHealth(state) {
     const off = state === "offline";
     $("q").disabled = off; $("askGo").disabled = off;
-    exList.classList.toggle("off", off);
+    stage.classList.toggle("offline", off);   // hides every example list, the answer panel's too
     note.hidden = state === "online";
     note.textContent = off ? t().offline : state === "degraded" ? t().degradedNotice : "";
   }

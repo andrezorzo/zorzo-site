@@ -1,6 +1,7 @@
 // The API's health drives the page's state (zorzo-api LLD "Front against the API", "Health"): checked on load;
 // while offline, again every HEALTH_POLL_INTERVAL and when the tab regains focus, back to online by itself.
-// No polling while online: a question that finds the API unreachable reports it through `offline()`.
+// No polling while online. A question's outcome is fresher than a check started before it: one that finds the
+// API unreachable reports `offline()`, one that gets a stream reports `reached()`, and an older check is dropped.
 
 import { health } from "../data/api.js";
 
@@ -8,7 +9,7 @@ const HEALTH_POLL_INTERVAL = 30_000;   // zorzo-api LLD "Values and configuratio
 
 /** Starts checking now; `state` is "online" until the first check answers. */
 export function startHealth() {
-  let state = "online", timer = 0, checking = false, reported = 0;
+  let state = "online", timer = 0, checking = false, again = false, reported = 0;
   const subscribers = [];
   function set(next) {
     state = next;
@@ -17,13 +18,16 @@ export function startHealth() {
     if (next === "offline") timer = setTimeout(check, HEALTH_POLL_INTERVAL);
   }
   async function check() {
-    if (checking) return;
+    if (checking) { again = true; return; }   // one more check after this one
     checking = true;
     const since = reported;
     try {
       const next = await health();
-      if (since === reported) set(next);   // a failed question reported offline meanwhile: that wins
-    } finally { checking = false; }
+      if (since === reported) set(next);
+    } finally {
+      checking = false;
+      if (again) { again = false; check(); }
+    }
   }
   const recheck = () => { if (state === "offline" && document.visibilityState === "visible") check(); };
   addEventListener("focus", recheck);
@@ -34,5 +38,6 @@ export function startHealth() {
     /** Calls fn with every new state ("online", "degraded" or "offline"). */
     subscribe(fn) { subscribers.push(fn); },
     offline: () => { reported++; set("offline"); },
+    reached: () => { reported++; if (state === "offline") set("online"); },
   };
 }

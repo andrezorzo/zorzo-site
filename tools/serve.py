@@ -47,8 +47,10 @@ class Handler(SimpleHTTPRequestHandler):
             while chunk := res.read1(65536):
                 self.wfile.write(chunk)
                 self.wfile.flush()
-        except (OSError, http.client.HTTPException):
-            pass   # the visitor left (a new question cancels the current one), or the API stopped mid-stream
+        except (BrokenPipeError, ConnectionResetError):
+            pass   # the visitor left (a new question cancels the current one)
+        except (OSError, http.client.HTTPException) as exc:
+            self.log_error("API stream ended early: %r", exc)
         finally:
             api.close()
 

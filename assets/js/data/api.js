@@ -4,9 +4,11 @@
 
 const SESSION_KEY = "conversation";
 const TURNSTILE = "unverified";   // the API only checks it is non-empty until F01-T04 adds the widget
+// 503 from the API; 502 and 504 from CloudFront or Caddy when the API doesn't answer (LLD "Front against the API")
+const OFFLINE_STATUS = new Set([502, 503, 504]);
 
 /**
- * Why a question got no answer: offline (503 or no network), dropped (the stream ended before `done`), failed
+ * Why a question got no answer: offline (502, 503, 504 or no network), dropped (the stream ended before `done`), failed
  * (any other status, a frame that isn't JSON, or an `error` event, whose `done` gives the trace id).
  */
 export class AskError extends Error {
@@ -88,7 +90,7 @@ export async function* ask(question, { signal }) {
     if (signal.aborted) throw err;
     throw new AskError("offline");
   }
-  if (res.status === 503) throw new AskError("offline");
+  if (OFFLINE_STATUS.has(res.status)) throw new AskError("offline");
   if (!res.ok || !res.body) throw new AskError("failed");
   try {
     for await (const ev of read(res.body, signal)) {
@@ -99,7 +101,6 @@ export async function* ask(question, { signal }) {
     }
   } catch (err) {
     if (signal.aborted || err instanceof AskError) throw err;
-    throw new AskError("dropped");
   }
-  throw new AskError(failed ? "failed" : "dropped");
+  throw new AskError(failed ? "failed" : "dropped");   // cut or closed before `done`; after `error`, still a failure
 }
