@@ -289,12 +289,13 @@ export function createScene({ canvas, stage, brain: DATA, chunks, entities }) {
   canvas.addEventListener("pointerdown", (e) => { drag = { x: e.clientX, y: e.clientY, moved: 0 }; });
   canvas.addEventListener("pointercancel", () => { drag = null; });   // touch: a vertical swipe scrolls the page (touch-action: pan-y)
   addEventListener("pointerup", (e) => {
-    if (drag && drag.moved < 5 && e.target === canvas) {
+    const tap = drag && drag.moved < 5 && e.target === canvas;
+    drag = null;   // before the callbacks: one that throws must not leave a drag running
+    if (tap) {
       const r = canvas.getBoundingClientRect(), i = pick(e.clientX - r.left, e.clientY - r.top);
       if (i >= 0 && i < C) impulse(i);
       tapFns.forEach((fn) => fn(target(i)));
     }
-    drag = null;
   });
   canvas.addEventListener("pointermove", (e) => {
     lastInput = performance.now();
@@ -366,8 +367,7 @@ export function createScene({ canvas, stage, brain: DATA, chunks, entities }) {
         g.cx += (tg.cx - g.cx) * e; g.cy += (tg.cy - g.cy) * e; g.u += (tg.u - g.u) * e; applyView();
       }
     }
-    // an interface bug costs that frame's overlay, never the brain
-    frameFns.forEach((fn) => { try { fn(now); } catch (err) { console.error(err); } });
+    frameFns.forEach((fn) => fn(now));   // an exception here ends the brain too (fail), like one in the scene
     // background glow sits behind the brain and drifts against the tilt (parallax), so it moves with the scene
     {
       const bx = g.cx - tilt.x * g.u * 0.35, by = g.cy - tilt.y * g.u * 0.25, br = g.u * 2.1;
@@ -397,7 +397,7 @@ export function createScene({ canvas, stage, brain: DATA, chunks, entities }) {
     onTap: (fn) => tapFns.push(fn),
     onFrame: (fn) => frameFns.push(fn),
     /** The brain stopped for good (see fail): continue without it. */
-    onFail: (fn) => { if (failed) fn(); else failFns.push(fn); },
+    onFail: (fn) => { if (!failed) { failFns.push(fn); return; } try { fn(); } catch (err) { console.error(err); } },
     poke: () => { lastInput = performance.now(); },
     fire: fireAt,
     impulse,

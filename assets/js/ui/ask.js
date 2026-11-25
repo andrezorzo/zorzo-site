@@ -98,7 +98,7 @@ export function startAsk({ scene: brain, stage, ask, published }) {
     ans.hidden = !on; stage.classList.toggle("has-answer", on);
     if (!scene) return;
     scene.setAnswering(on);
-    if (on) requestAnimationFrame(() => scene?.setAnswering(true, ans.getBoundingClientRect().right - stage.getBoundingClientRect().left));
+    if (on) requestAnimationFrame(() => !ans.hidden && scene?.setAnswering(true, ans.getBoundingClientRect().right - stage.getBoundingClientRect().left));
   }
   function hoverChunk(el, k) {
     citeFrom = el; citeK = scene ? k : -1;
