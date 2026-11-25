@@ -14,9 +14,9 @@ export function startHealth() {
   const subscribers = [];
   function set(next) {
     state = next;
-    subscribers.forEach((fn) => fn(next));
     clearTimeout(timer);
-    if (next === "offline") timer = setTimeout(check, HEALTH_POLL_INTERVAL);
+    if (next === "offline") timer = setTimeout(check, HEALTH_POLL_INTERVAL);   // before the subscribers: none can skip it
+    subscribers.forEach((fn) => fn(next));
   }
   async function check() {
     if (checking) { again = true; return; }
