@@ -16,9 +16,32 @@ contract live in [zorzo-api](https://github.com/andrezorzo/zorzo-api), which is 
 
 - **What the system does** lives in zorzo-api `docs/`. This repo never repeats a rule, value or contract;
   it points to the document and section title.
-- **How the front is built** (commands, stack, code practices) lives in this file, once the code exists.
+- **How the front is built** lives in `docs/lld.md`; commands and code practices live in this file.
 - **Planning** follows the zorzo-api `AGENTS.md`, "Planning": a front task is planned and tracked there,
   and its code lands here, in a PR that names the task (`F<NN>-T<NN>`).
+
+## Commands
+
+Run from the repository root. The site has no build: what is in the repository is what is served.
+
+| What | Command |
+| --- | --- |
+| Serve the site locally | `npm run serve`, then open http://127.0.0.1:4173 |
+| Use the API's published data instead of the demo copy | `cp -r ../zorzo-api/var/data ./data` (after an ingest with `--activate`; see zorzo-api `apps/ingest/AGENTS.md`) |
+| Install the test tools | `npm ci && npx playwright install chromium` |
+| Browser tests | `npm test` |
+| Refresh the test fixture | in zorzo-api, ingest `tests/fixtures/corpus` with `EMBEDDER=fake APP_ENV=local --activate` into an empty `DATA_DIR`, then copy that folder to `tests/fixtures/data/` |
+| Rebuild the brain data | download the mesh (see `tools/build_brain.py`), then `uv run tools/build_brain.py` |
+| Rebuild the still image | `npm run serve`, then `uv run tools/make_poster.py` |
+
+## Code practices
+
+- How the front is built (modules, the brain's data, the fallback without 3D) is in `docs/lld.md`; read it
+  before changing `assets/js/`.
+- The interface gets answers only through `ask(question, {signal})` and its stream events; it never reads the
+  search directly. The scene and the data never import the interface.
+- Nothing loads from another origin: libraries and fonts are vendored with their license files.
+- Text the visitor reads goes through `i18n.js`, in both languages.
 
 ## Web platform
 
