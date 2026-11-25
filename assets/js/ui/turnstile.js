@@ -15,8 +15,8 @@ const SITE_KEY = "";
 /**
  * @param container the element the widget renders into (it stays invisible)
  * @param triggers elements whose first focus, key or pointer press loads the script
- * @returns token(): Promise<string>, a single-use token (rejects when none can be had); handing one out
- *   resets the widget and fetches the next ahead
+ * @returns token(signal): Promise<string>, a single-use token (rejects when none can be had, or on abort);
+ *   handing one out resets the widget and fetches the next ahead
  */
 export function startTurnstile({ container, triggers }) {
   const siteKey = LOCAL ? TEST_SITE_KEY : SITE_KEY;
@@ -24,14 +24,14 @@ export function startTurnstile({ container, triggers }) {
   // idle: nothing in hand; running: a challenge is out; ready: a token in hand. The widget is reset only when
   // no challenge is out, so a late callback can never land as the next question's token.
   let state = "idle", ready = null;
-  let waiting = [];   // questions waiting for the challenge that is out
+  let waiting = [];   // questions waiting for a token, oldest first; an aborted one leaves the line
 
   function settle(token, error) {
     state = token ? "ready" : "idle";
     ready = token;
-    const now = waiting; waiting = [];
-    if (token && now.length) now[0].resolve(take());
-    now.slice(token ? 1 : 0).forEach(({ reject }) => reject(error ?? new Error("turnstile token taken")));
+    if (!token) { const now = waiting; waiting = []; now.forEach(({ reject }) => reject(error)); return; }
+    // One token per question: the oldest gets this one, and taking it starts the challenge for the next.
+    waiting.shift()?.resolve(take());
   }
   function run() {
     if (state !== "idle") return;
@@ -51,17 +51,26 @@ export function startTurnstile({ container, triggers }) {
       const script = document.createElement("script");
       script.src = SCRIPT; script.async = true;
       script.onload = () => {
-        api = window.turnstile;
-        widget = api.render(container, {
-          sitekey: siteKey,
-          execution: "execute",
-          callback: (token) => settle(token),
-          // after a failure the widget needs a reset before the next challenge
-          "error-callback": () => { api.reset(widget); settle(null, new Error("turnstile error")); return true; },
-          "timeout-callback": () => { api.reset(widget); settle(null, new Error("turnstile timeout")); },
-          "expired-callback": () => { if (state === "ready") { ready = null; state = "idle"; } },
-        });
-        resolve();
+        try {
+          api = window.turnstile;
+          widget = api.render(container, {
+            sitekey: siteKey,
+            execution: "execute",
+            "refresh-expired": "manual",   // no challenge outside this state machine
+            callback: (token) => settle(token),
+            // after a failure the widget needs a reset before the next challenge
+            "error-callback": () => { api.reset(widget); settle(null, new Error("turnstile error")); return true; },
+            "timeout-callback": () => { api.reset(widget); settle(null, new Error("turnstile timeout")); },
+            "expired-callback": () => {   // the token in hand lapsed: drop it, and fetch a new one if someone waits
+              if (state !== "ready") return;
+              ready = null; state = "idle"; api.reset(widget);
+              if (waiting.length) run();
+            },
+          });
+          resolve();
+        } catch (err) {   // the script loaded but isn't Turnstile as expected: no token, not a hang
+          loading = null; reject(err);
+        }
       };
       script.onerror = () => { loading = null; script.remove(); reject(new Error("turnstile script")); };
       document.head.append(script);
@@ -73,10 +82,18 @@ export function startTurnstile({ container, triggers }) {
   triggers.forEach((el) => ["focusin", "keydown", "pointerdown"].forEach((type) => el.addEventListener(type, warm, { once: true })));
 
   return {
-    async token() {
+    async token(signal) {
       await load();
+      signal?.throwIfAborted();
       if (state === "ready") return take();
-      const next = new Promise((resolve, reject) => waiting.push({ resolve, reject }));
+      const next = new Promise((resolve, reject) => {
+        const waiter = { resolve, reject };
+        waiting.push(waiter);
+        signal?.addEventListener("abort", () => {   // a newer question replaced this one: leave the line
+          waiting = waiting.filter((w) => w !== waiter);
+          reject(signal.reason);
+        }, { once: true });
+      });
       run();
       return next;
     },

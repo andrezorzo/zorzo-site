@@ -8,7 +8,7 @@ test("says what to fix on 422", async ({ page }) => {
   await expect(page.locator("#stage")).toHaveClass(/ready/);
   await askQuestion(page, "Which cloud services does he use?");
   const message = page.locator("#askError");
-  await expect(message).toHaveText("This question can't be sent. Use plain text, up to 500 characters.");
+  await expect(message).toHaveText("This question can't be sent. Write it as plain text, and shorter.");
   await expect(page.locator("#answer")).toBeHidden();
   await page.locator("#q").pressSequentially("x");
   await expect(message).toBeHidden();   // typing clears it
@@ -82,4 +82,18 @@ test("sends a fresh token with each question", async ({ page }) => {
   await expect.poll(() => tokens.length).toBe(2);
   expect(new Set(tokens).size).toBe(2);
   expect(scriptLoads).toBe(1);
+});
+
+test("a second question while the first waits for its token gets the token", async ({ page }) => {
+  // the first challenge answers only after the second question is asked
+  await page.addInitScript(() => { (window as any).__turnstileDelay = 800; });
+  const sent: string[] = [];
+  page.on("request", (r) => { if (isAskRequest(r)) sent.push(r.postDataJSON().q); });
+  await page.goto("/");
+  await expect(page.locator("#stage")).toHaveClass(/ready/);
+  await askQuestion(page, "Which cloud services does he use?");
+  await askQuestion(page, "Has he led a migration?");
+  await expect(page.locator("#ansQ")).toHaveText("Has he led a migration?");
+  await expect(page.locator("#ansSources .src")).toHaveCount(6);
+  expect(sent).toEqual(["Has he led a migration?"]);   // the replaced question never went out
 });

@@ -1,5 +1,5 @@
 // The question box, the steps panel (telemetry), the token flight into the brain and the answer panel.
-// Answers come only from `ask(question, {signal})`, which yields the stream events of the API (zorzo-api LLD
+// Answers come only from `ask(question, {signal, token})` (the token from the bot check, see `gated`), which yields the stream events of the API (zorzo-api LLD
 // "Stream events"); the brain, when there is one, only reacts to them. Without the brain everything here works
 // the same, minus the effects (F01 PRD, story S11).
 
@@ -14,7 +14,7 @@ const flightDur = (n) => 950 + n * 40;
 
 /**
  * @param scene the brain's controls, or null without 3D
- * @param ask (question, {signal}) → async iterator of stream events
+ * @param ask (question, {signal, token}) → async iterator of stream events
  * @param published { corpus, examples, entities }
  * @param health the API's health (ui/health.js): its state drives the box, and a question that finds the API
  *   unreachable reports it
@@ -189,8 +189,10 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
   async function* gated(question, signal) {
     for (let retried = false; ; retried = true) {
       let token;
-      try { token = await bot.token(); } catch (err) { console.error(err); throw new AskError("bot"); }
-      signal.throwIfAborted();
+      try { token = await bot.token(signal); } catch (err) {
+        if (signal.aborted) throw err;   // a newer question took over: not a bot-check failure
+        console.error(err); throw new AskError("bot");
+      }
       try { yield* ask(question, { signal, token }); return; } catch (err) {
         if (retried || !(err instanceof AskError) || err.kind !== "bot") throw err;
       }

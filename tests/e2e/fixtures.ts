@@ -34,7 +34,7 @@ export async function serveError(page: Page, status: number, code: string, heade
 // Cloudflare's Turnstile script, replaced by a stub: the tests never reach Cloudflare. Like the real widget, a
 // challenge after a reset hands out a new token (`stub-token-1`, `stub-token-2`…), and one without a reset
 // hands out the same token again. With `window.__turnstile = "error"` set before the page loads, every
-// challenge fails instead.
+// challenge fails instead; `window.__turnstileDelay` (ms) slows each challenge down.
 const TURNSTILE_STUB = `
 window.turnstile = (() => {
   let n = 0, opts = null, fresh = true;
@@ -45,7 +45,7 @@ window.turnstile = (() => {
         if (window.__turnstile === "error") return opts["error-callback"]();
         if (fresh) { n++; fresh = false; }
         opts.callback("stub-token-" + n);
-      });
+      }, window.__turnstileDelay ?? 0);
     },
     reset() { fresh = true; },
   };
