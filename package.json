@@ -4,10 +4,12 @@
   "description": "Static front of zorzo.dev.br. npm is only for the browser tests; the site itself has no build.",
   "license": "MIT",
   "scripts": {
-    "serve": "python3 -m http.server 4173 --bind 127.0.0.1",
+    "serve": "python3 tools/serve.py 4173",
     "test": "playwright test"
   },
   "devDependencies": {
-    "@playwright/test": "1.64.1"
+    "@playwright/test": "1.64.1",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1"
   }
 }

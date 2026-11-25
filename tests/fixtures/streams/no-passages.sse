@@ -1,0 +1,21 @@
+event: stage
+data: {"name":"retrieve","status":"start","ms":null}
+
+event: stage
+data: {"name":"retrieve","status":"end","ms":2}
+
+event: stage
+data: {"name":"rerank","status":"start","ms":null}
+
+event: stage
+data: {"name":"rerank","status":"end","ms":0}
+
+event: degraded
+data: {"mode":"search_only","reason":"models_unavailable"}
+
+event: retrieval
+data: {"hits":[],"corpus_version":1}
+
+event: done
+data: {"trace_id":"d53cf716-6f61-4977-b0b5-2c2db1ed0c22","cached":false,"abstained":false,"suggestion":null}
+

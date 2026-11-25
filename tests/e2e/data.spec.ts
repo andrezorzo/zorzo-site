@@ -1,4 +1,4 @@
-import { askQuestion, corpus, examples, expect, manifest, test } from "./fixtures";
+import { askQuestion, corpus, examples, expect, manifest, serveStream, stream, test } from "./fixtures";
 
 // AC4: the page reads the data the ingest publishes, through the manifest, and shows the example questions of
 // the interface language.
@@ -22,16 +22,20 @@ test("reads the published data through the manifest", async ({ page }) => {
 test.describe("in Portuguese", () => {
   test.use({ locale: "pt-BR" });
   test("shows the example questions of the interface language", async ({ page }) => {
+    await serveStream(page, stream("no-passages"));
     const textsIn = (lang: string) => examples.filter((e) => e.lang === lang).map((e) => e.text);
     await page.goto("/");
     await expect(page.locator("#stage")).toHaveClass(/ready/);
+    await expect(page.locator("#askExamples button")).toHaveText(textsIn("pt"));
     expect(textsIn("pt")).toContain(await page.locator("#q").getAttribute("placeholder"));
 
     await page.getByRole("button", { name: "EN", exact: true }).click();
+    await expect(page.locator("#askExamples button")).toHaveText(textsIn("en"));
     expect(textsIn("en")).toContain(await page.locator("#q").getAttribute("placeholder"));
 
     await askQuestion(page, "zyxwvut qqqq");
-    await expect(page.locator(".ans-examples button")).toHaveText(textsIn("en"));
+    await expect(page.locator("#answer .ans-examples button")).toHaveText(textsIn("en"));
+    await expect(page.locator("#askExamples")).toBeHidden();   // the list under the box makes way for the answer
   });
 });
 
@@ -40,5 +44,8 @@ test("keeps the question box when the published data fails", async ({ page }) =>
   await page.goto("/");
   await expect(page.locator("#stage")).toHaveClass(/ready/);
   await askQuestion(page, "Which cloud services does he use?");
-  await expect(page.locator("#ansText")).toContainText(/No matching sources|Nenhuma fonte/);
+  // the page has no corpus, so the passages show by the titles the stream sends, with no text or link
+  await expect(page.locator("#ansSources li")).toHaveCount(6);
+  await expect(page.locator("#ansSources li").first()).toContainText("FAQ");
+  await expect(page.locator("#ansSources a.src-link")).toHaveCount(0);
 });

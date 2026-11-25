@@ -1,4 +1,4 @@
-import { test as base, expect, type Page } from "@playwright/test";
+import { test as base, expect, type Page, type Request } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
@@ -9,6 +9,25 @@ export const manifest = JSON.parse(readFileSync(path.join(DATA, "manifest.json")
 const folder = path.join(DATA, manifest.path.replace(/^data\//, ""));
 export const corpus = JSON.parse(readFileSync(path.join(folder, "corpus.json"), "utf8"));
 export const examples: { id: string; lang: string; text: string }[] = JSON.parse(readFileSync(path.join(folder, "examples.json"), "utf8"));
+
+// The API's streams recorded over the same fixture database (tools/record_streams.py), validated against the
+// SSE schema by streams.spec.ts. The page only ever gets one of these files, or a part of one.
+const STREAMS = path.join(__dirname, "..", "fixtures", "streams");
+export const stream = (name: "passages" | "no-passages" | "error") => readFileSync(path.join(STREAMS, `${name}.sse`), "utf8");
+export const isAsk = (url: URL) => url.pathname === "/api/v1/ask";
+export const isAskRequest = (r: Request) => isAsk(new URL(r.url()));
+export const isHealth = (url: URL) => url.pathname === "/api/healthz";
+export const healthy = { status: "ok", mode: "normal", db: "ok" };
+
+/** POST /api/v1/ask answers with this stream body. */
+export async function serveStream(page: Page, body: string) {
+  await page.route(isAsk, (route) => route.fulfill({ status: 200, contentType: "text/event-stream", body }));
+}
+
+/** GET /api/healthz answers with this status and body. */
+export async function serveHealth(page: Page, status: number, body: object) {
+  await page.route(isHealth, (route) => route.fulfill({ status, json: body }));
+}
 
 export async function serveFixture(page: Page) {
   await page.route((url) => url.pathname.startsWith("/data/"), (route) => {
@@ -32,7 +51,14 @@ export async function askQuestion(page: Page, question: string) {
   await page.locator("#q").press("Enter");
 }
 
+// Every test starts with the published fixture data, a healthy API and the stream with passages; a test
+// overrides a route by adding its own (the last route added answers first).
 export const test = base.extend<{ fixtureData: void }>({
-  fixtureData: [async ({ page }, use) => { await serveFixture(page); await use(); }, { auto: true }],
+  fixtureData: [async ({ page }, use) => {
+    await serveFixture(page);
+    await serveHealth(page, 200, healthy);
+    await serveStream(page, stream("passages"));
+    await use();
+  }, { auto: true }],
 });
 export { expect };

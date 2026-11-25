@@ -1,0 +1,9 @@
+event: stage
+data: {"name":"retrieve","status":"start","ms":null}
+
+event: error
+data: {"code":"internal","message":"Something went wrong on our side."}
+
+event: done
+data: {"trace_id":"3f1c2b9a-8d4e-4f6a-b2c1-9e7d5a3b1c0f","cached":false,"abstained":false,"suggestion":null}
+

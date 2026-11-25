@@ -21,7 +21,10 @@ const T = {
     blocked: "Bloqueado: parece uma tentativa de mudar as regras do agente. Essa camada existe de propósito, e o painel de defesas mostra quantas tentativas foram barradas.",
     searchOnlyNotice: "Modo só busca: estes são os trechos das fontes que mais combinam com a pergunta.",
     noSources: "Nenhuma fonte combina com esta pergunta.", tryExamples: "Tente uma destas:",
-    sources: (n) => `Fontes · ${n}`, error: "Algo deu errado. Pergunte de novo.",
+    sources: (n) => `Fontes · ${n}`, error: "Algo deu errado. Pergunte de novo.", trace: "Ver o trace desta pergunta",
+    connectionLost: "A conexão caiu antes do fim. Pergunte de novo.",
+    offline: "O backend está fora do ar. A caixa volta sozinha quando ele voltar.",
+    degradedNotice: "Modo só busca: as respostas mostram os trechos das fontes, sem texto escrito por IA.",
   },
   en: {
     typed: "building intelligent systems", role: "Senior backend engineer · Applied AI",
@@ -42,7 +45,10 @@ const T = {
     blocked: "Blocked: this looks like an attempt to change the agent's rules. That layer is there on purpose, and the defenses page shows how many attempts were stopped.",
     searchOnlyNotice: "Search-only mode: these are the source passages that best match the question.",
     noSources: "No matching sources for this question.", tryExamples: "Try one of these:",
-    sources: (n) => `Sources · ${n}`, error: "Something went wrong. Ask again.",
+    sources: (n) => `Sources · ${n}`, error: "Something went wrong. Ask again.", trace: "See the trace of this question",
+    connectionLost: "The connection dropped before the end. Ask again.",
+    offline: "The backend is unreachable. The box comes back by itself when it returns.",
+    degradedNotice: "Search-only mode: answers show the source passages, with no AI-written text.",
   },
 };
 

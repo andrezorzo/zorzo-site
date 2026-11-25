@@ -2,15 +2,17 @@
 // this browser can draw it and the visitor has not asked for reduced motion. The question box works either way.
 // Three.js is imported only on that path, so a visitor without 3D never downloads it.
 
-import { ask } from "./data/mock.js";
+import { ask } from "./data/api.js";
 import { loadPublished } from "./data/published.js";
 import { startAsk } from "./ui/ask.js";
+import { startHealth } from "./ui/health.js";
 import { startHubs } from "./ui/hubs.js";
 import { startIntro } from "./ui/intro.js";
 import { $, fetchJson, REDUCED, webglAvailable } from "./util.js";
 
 const stage = $("stage");
 startIntro();
+const apiHealth = startHealth();   // the first check runs while the data and the brain load
 
 // the brain's files load while the published data does
 const brainFiles = !REDUCED && webglAvailable()
@@ -34,5 +36,5 @@ if (brainFiles) {
 }
 stage.classList.toggle("no-gl", !scene);
 stage.classList.remove("no-js");   // in case the fallback timer in index.html fired on a slow load
-startAsk({ scene, stage, ask, published });
+startAsk({ scene, stage, ask, published, health: apiHealth });
 stage.classList.add("ready");

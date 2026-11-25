@@ -1,0 +1,612 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zorzo.dev.br/contracts/sse-v1.schema.json",
+  "title": "zorzo.dev.br stream events, v1",
+  "description": "SSE frames `event: <name>` and `data: <JSON>`; `: ping` comments keep the connection alive. Ordering: `done` is always last, sent exactly once unless the connection drops; `blocked` and `error` are followed only by `done`; `degraded` is followed only by its `retrieval` hits, then `done`; every `token` comes before the first `claim`; a cached answer sends `stage`, the cached `claim` events, `usage` with cost 0 and `done {cached: true}`, with no `token`. v1 freezes at launch.",
+  "$defs": {
+    "Blocked": {
+      "additionalProperties": false,
+      "properties": {
+        "layer": {
+          "title": "Layer",
+          "type": "string"
+        },
+        "category": {
+          "title": "Category",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "layer",
+        "category",
+        "message"
+      ],
+      "title": "Blocked",
+      "type": "object"
+    },
+    "BlockedEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "event": {
+          "const": "blocked",
+          "title": "Event",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/Blocked"
+        }
+      },
+      "required": [
+        "event",
+        "data"
+      ],
+      "title": "BlockedEvent",
+      "type": "object"
+    },
+    "Claim": {
+      "additionalProperties": false,
+      "properties": {
+        "i": {
+          "title": "I",
+          "type": "integer"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "sources": {
+          "description": "Chunk ids",
+          "items": {
+            "type": "integer"
+          },
+          "title": "Sources",
+          "type": "array"
+        },
+        "verdict": {
+          "enum": [
+            "supported",
+            "partial",
+            "unsupported"
+          ],
+          "title": "Verdict",
+          "type": "string"
+        }
+      },
+      "required": [
+        "i",
+        "text",
+        "sources",
+        "verdict"
+      ],
+      "title": "Claim",
+      "type": "object"
+    },
+    "ClaimEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "event": {
+          "const": "claim",
+          "title": "Event",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/Claim"
+        }
+      },
+      "required": [
+        "event",
+        "data"
+      ],
+      "title": "ClaimEvent",
+      "type": "object"
+    },
+    "Degraded": {
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "const": "search_only",
+          "title": "Mode",
+          "type": "string"
+        },
+        "reason": {
+          "enum": [
+            "models_unavailable",
+            "budget_exhausted",
+            "quota_exhausted",
+            "deadline"
+          ],
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mode",
+        "reason"
+      ],
+      "title": "Degraded",
+      "type": "object"
+    },
+    "DegradedEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "event": {
+          "const": "degraded",
+          "title": "Event",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/Degraded"
+        }
+      },
+      "required": [
+        "event",
+        "data"
+      ],
+      "title": "DegradedEvent",
+      "type": "object"
+    },
+    "Done": {
+      "additionalProperties": false,
+      "properties": {
+        "trace_id": {
+          "format": "uuid",
+          "title": "Trace Id",
+          "type": "string"
+        },
+        "cached": {
+          "title": "Cached",
+          "type": "boolean"
+        },
+        "abstained": {
+          "title": "Abstained",
+          "type": "boolean"
+        },
+        "suggestion": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Id of the closest example question, on an abstention or decline",
+          "title": "Suggestion"
+        }
+      },
+      "required": [
+        "trace_id",
+        "cached",
+        "abstained",
+        "suggestion"
+      ],
+      "title": "Done",
+      "type": "object"
+    },
+    "DoneEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "event": {
+          "const": "done",
+          "title": "Event",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/Done"
+        }
+      },
+      "required": [
+        "event",
+        "data"
+      ],
+      "title": "DoneEvent",
+      "type": "object"
+    },
+    "Error": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "title": "Error",
+      "type": "object"
+    },
+    "ErrorEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "event": {
+          "const": "error",
+          "title": "Event",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/Error"
+        }
+      },
+      "required": [
+        "event",
+        "data"
+      ],
+      "title": "ErrorEvent",
+      "type": "object"
+    },
+    "Guard": {
+      "additionalProperties": false,
+      "properties": {
+        "layer": {
+          "title": "Layer",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "action": {
+          "title": "Action",
+          "type": "string"
+        }
+      },
+      "required": [
+        "layer",
+        "label",
+        "action"
+      ],
+      "title": "Guard",
+      "type": "object"
+    },
+    "GuardEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "event": {
+          "const": "guard",
+          "title": "Event",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/Guard"
+        }
+      },
+      "required": [
+        "event",
+        "data"
+      ],
+      "title": "GuardEvent",
+      "type": "object"
+    },
+    "Hit": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "Chunk id, as in corpus.json of the same version",
+          "title": "Id",
+          "type": "integer"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "score": {
+          "title": "Score",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "score"
+      ],
+      "title": "Hit",
+      "type": "object"
+    },
+    "Model": {
+      "additionalProperties": false,
+      "properties": {
+        "stage": {
+          "title": "Stage",
+          "type": "string"
+        },
+        "model": {
+          "title": "Model",
+          "type": "string"
+        },
+        "provider": {
+          "title": "Provider",
+          "type": "string"
+        },
+        "fallback_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fallback Reason"
+        }
+      },
+      "required": [
+        "stage",
+        "model",
+        "provider"
+      ],
+      "title": "Model",
+      "type": "object"
+    },
+    "ModelEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "event": {
+          "const": "model",
+          "title": "Event",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/Model"
+        }
+      },
+      "required": [
+        "event",
+        "data"
+      ],
+      "title": "ModelEvent",
+      "type": "object"
+    },
+    "Retrieval": {
+      "additionalProperties": false,
+      "properties": {
+        "hits": {
+          "items": {
+            "$ref": "#/$defs/Hit"
+          },
+          "title": "Hits",
+          "type": "array"
+        },
+        "corpus_version": {
+          "title": "Corpus Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "hits",
+        "corpus_version"
+      ],
+      "title": "Retrieval",
+      "type": "object"
+    },
+    "RetrievalEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "event": {
+          "const": "retrieval",
+          "title": "Event",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/Retrieval"
+        }
+      },
+      "required": [
+        "event",
+        "data"
+      ],
+      "title": "RetrievalEvent",
+      "type": "object"
+    },
+    "Stage": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "enum": [
+            "guard",
+            "route",
+            "cache",
+            "retrieve",
+            "rerank",
+            "assess",
+            "reformulate",
+            "answer",
+            "verify",
+            "repair",
+            "finish"
+          ],
+          "title": "Name",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "start",
+            "end"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "ms": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Set on `end`, null on `start`",
+          "title": "Ms"
+        }
+      },
+      "required": [
+        "name",
+        "status",
+        "ms"
+      ],
+      "title": "Stage",
+      "type": "object"
+    },
+    "StageEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "event": {
+          "const": "stage",
+          "title": "Event",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/Stage"
+        }
+      },
+      "required": [
+        "event",
+        "data"
+      ],
+      "title": "StageEvent",
+      "type": "object"
+    },
+    "Token": {
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "Token",
+      "type": "object"
+    },
+    "TokenEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "event": {
+          "const": "token",
+          "title": "Event",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/Token"
+        }
+      },
+      "required": [
+        "event",
+        "data"
+      ],
+      "title": "TokenEvent",
+      "type": "object"
+    },
+    "Usage": {
+      "additionalProperties": false,
+      "properties": {
+        "tokens_in": {
+          "title": "Tokens In",
+          "type": "integer"
+        },
+        "tokens_out": {
+          "title": "Tokens Out",
+          "type": "integer"
+        },
+        "cost_usd": {
+          "title": "Cost Usd",
+          "type": "number"
+        },
+        "latency_ms": {
+          "title": "Latency Ms",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "tokens_in",
+        "tokens_out",
+        "cost_usd",
+        "latency_ms"
+      ],
+      "title": "Usage",
+      "type": "object"
+    },
+    "UsageEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "event": {
+          "const": "usage",
+          "title": "Event",
+          "type": "string"
+        },
+        "data": {
+          "$ref": "#/$defs/Usage"
+        }
+      },
+      "required": [
+        "event",
+        "data"
+      ],
+      "title": "UsageEvent",
+      "type": "object"
+    }
+  },
+  "discriminator": {
+    "mapping": {
+      "blocked": "#/$defs/BlockedEvent",
+      "claim": "#/$defs/ClaimEvent",
+      "degraded": "#/$defs/DegradedEvent",
+      "done": "#/$defs/DoneEvent",
+      "error": "#/$defs/ErrorEvent",
+      "guard": "#/$defs/GuardEvent",
+      "model": "#/$defs/ModelEvent",
+      "retrieval": "#/$defs/RetrievalEvent",
+      "stage": "#/$defs/StageEvent",
+      "token": "#/$defs/TokenEvent",
+      "usage": "#/$defs/UsageEvent"
+    },
+    "propertyName": "event"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/StageEvent"
+    },
+    {
+      "$ref": "#/$defs/GuardEvent"
+    },
+    {
+      "$ref": "#/$defs/RetrievalEvent"
+    },
+    {
+      "$ref": "#/$defs/ModelEvent"
+    },
+    {
+      "$ref": "#/$defs/TokenEvent"
+    },
+    {
+      "$ref": "#/$defs/ClaimEvent"
+    },
+    {
+      "$ref": "#/$defs/UsageEvent"
+    },
+    {
+      "$ref": "#/$defs/BlockedEvent"
+    },
+    {
+      "$ref": "#/$defs/DegradedEvent"
+    },
+    {
+      "$ref": "#/$defs/ErrorEvent"
+    },
+    {
+      "$ref": "#/$defs/DoneEvent"
+    }
+  ]
+}
