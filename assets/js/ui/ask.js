@@ -39,11 +39,11 @@ export function startAsk({ scene: brain, stage, ask, published, health }) {
     let sx = 0, sy = 0; teleAnchor.forEach((i) => { const [x, y] = scene.screenOf(i); sx += x; sy += y; });
     sx /= teleAnchor.length; sy /= teleAnchor.length;
     const w = tele.offsetWidth, h = tele.offsetHeight;
-    const ex = below.offsetHeight;   // the box sits above the notice and the examples
     if (portrait) {   // above the box, wherever the safe area and the examples put it
       const boxTop = $("ask").getBoundingClientRect().top - stage.getBoundingClientRect().top;
-      tele.style.transform = `translate(10px, ${boxTop - h - 32}px)`; return;
+      tele.style.transform = `translate(10px, ${Math.max(8, boxTop - h - 32)}px)`; return;
     }
+    const ex = below.offsetHeight;   // the box sits above the notice and the examples
     const openA = !ans.hidden, minLeft = openA ? ans.getBoundingClientRect().right + 24 : 8;
     let left = sx + 120 * s, top = sy - h / 2;
     left = Math.max(minLeft, left);

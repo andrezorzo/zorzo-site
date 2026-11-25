@@ -44,13 +44,18 @@ class Handler(SimpleHTTPRequestHandler):
             for name, value in res.getheaders():
                 if name.lower() not in HOP_BY_HOP: self.send_header(name, value)
             self.end_headers()   # HTTP/1.0: the body ends when the connection closes
-            while chunk := res.read1(65536):
+            while True:
+                try:
+                    chunk = res.read1(65536)
+                except (OSError, http.client.HTTPException) as exc:
+                    self.log_error("API stream ended early: %r", exc)
+                    return
+                if not chunk:
+                    return
                 self.wfile.write(chunk)
                 self.wfile.flush()
-        except (BrokenPipeError, ConnectionResetError):
+        except OSError:
             pass   # the visitor left (a new question cancels the current one)
-        except (OSError, http.client.HTTPException) as exc:
-            self.log_error("API stream ended early: %r", exc)
         finally:
             api.close()
 

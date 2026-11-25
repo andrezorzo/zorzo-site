@@ -74,8 +74,7 @@ LLD "Front against the API"; how this code does it:
   network chunks reassembled. No library: the format is a few lines, and nothing loads from another origin.
   Each frame becomes `{kind, ...data}`.
 - `ask()` throws `AskError` with a kind the interface turns into a message: `offline` (`502`, `503`, `504` or
-  no network;
-  it also sets the page offline), `dropped` (the stream ended before `done`), `failed` (any other status,
+  no network; it also sets the page offline), `dropped` (the stream ended before `done`), `failed` (any other status,
   a frame that isn't JSON, or an `error` event, with the trace id of the `done` after it, which the
   interface links). An abort (a new question) throws the browser's `AbortError`, which the interface ignores.
 - `ui/health.js` starts on boot, before the data loads; the box subscribes to its state.
@@ -84,11 +83,15 @@ LLD "Front against the API"; how this code does it:
   `sessionStorage` under `conversation`; with storage blocked, one id per page view.
 - Health is checked on load; while offline, again every `HEALTH_POLL_INTERVAL` and when the tab
   regains focus or becomes visible. There is no polling while online.
+- A question's outcome is fresher than a health check already in flight. A question that finds the API
+  unreachable sets offline at once; one that gets a stream while offline asks for a check (the API answers,
+  maybe in search-only mode). Checks never overlap: one requested during another runs after it, so the last
+  state comes from a check that started after the question's outcome.
 - A hit whose chunk isn't in the loaded corpus (a version activated after the page loaded) shows as a
   passage by the title the stream sends, with no text, link or brain point.
 
 **Example questions.** A list under the question box, in the interface language, hidden while an answer is
-open and while offline; clicking one asks it. The box, the intro and the hub links sit above the list by its
+open; clicking one asks it. While offline every example list is hidden, the answer panel's too. The box, the intro and the hub links sit above the list by its
 measured height (`--ex`), which stays reserved while an answer is open, so nothing moves when one opens.
 
 ## 3. Brain data

@@ -1,4 +1,4 @@
-import { askQuestion, expect, healthy, isAsk, serveHealth, test } from "./fixtures";
+import { askQuestion, expect, healthy, isAsk, isHealth, serveHealth, test } from "./fixtures";
 
 // AC4: GET /api/healthz drives the online, degraded and offline states (zorzo-api LLD "Front against the API",
 // "Health"); offline disables the box and recovers by itself every HEALTH_POLL_INTERVAL (30 s).
@@ -57,4 +57,45 @@ test("any other status shows the generic message and stays online", async ({ pag
   await askQuestion(page, "Which cloud services does he use?");
   await expect(page.locator("#ansText")).toHaveText("Something went wrong. Ask again.");
   await expect(page.locator("#q")).toBeEnabled();
+});
+
+// A question's outcome is fresher than a health check already in flight: the check after it decides.
+test.describe("a question's outcome beats an older health check", () => {
+  /** Holds the first /api/healthz until `release` is called with its answer; later checks get `after`. */
+  async function holdFirstHealth(page: import("@playwright/test").Page, after: { status: number; body: object }) {
+    let release!: (answer: { status: number; body: object }) => void;
+    const first = new Promise<{ status: number; body: object }>((resolve) => { release = resolve; });
+    let calls = 0;
+    await page.route(isHealth, async (route) => {
+      const answer = calls++ === 0 ? await first : after;
+      await route.fulfill({ status: answer.status, json: answer.body });
+    });
+    return release;
+  }
+
+  test("a stream keeps the page online after an old check says offline", async ({ page }) => {
+    const release = await holdFirstHealth(page, { status: 200, body: { ...healthy, mode: "degraded" } });
+    await page.goto("/");
+    await expect(page.locator("#stage")).toHaveClass(/ready/);
+    await askQuestion(page, "Which cloud services does he use?");
+    await expect(page.locator("#ansSources .src")).toHaveCount(6);
+    release({ status: 503, body: down });
+    // the check after the stream says degraded: the box stays usable, with the search-only notice
+    await expect(page.locator("#askNote")).toHaveText(/Search-only mode/);
+    await expect(page.locator("#q")).toBeEnabled();
+  });
+
+  test("a failed question keeps the page offline after an old check says online", async ({ page }) => {
+    const release = await holdFirstHealth(page, { status: 503, body: down });
+    await page.goto("/");
+    await expect(page.locator("#stage")).toHaveClass(/ready/);
+    await page.route(isAsk, (route) => route.abort("connectionrefused"));
+    await askQuestion(page, "Which cloud services does he use?");
+    await expect(page.locator("#q")).toBeDisabled();
+    const recheck = page.waitForResponse((r) => isHealth(new URL(r.url())) && r.status() === 503);
+    release({ status: 200, body: healthy });
+    await recheck;   // the old check said online; the one after the failure says offline, and decides
+    await expect(page.locator("#q")).toBeDisabled();
+    await expect(page.locator("#askNote")).toHaveText(/unreachable/);
+  });
 });
