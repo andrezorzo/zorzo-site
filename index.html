@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>André de Castro Zorzo</title>
+  <meta name="description" content="Senior backend engineer. Python, AWS, distributed systems and AI integration (MCP). Remote for US teams since 2006.">
+  <meta property="og:title" content="André de Castro Zorzo — Backend Engineer">
+  <meta property="og:description" content="Python, AWS, distributed systems and AI integration. Remote for US teams since 2006.">
+  <meta property="og:url" content="https://zorzo.dev.br">
+  <meta property="og:type" content="profile">
+  <meta name="theme-color" content="#000104">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2315233B'/%3E%3Cpath d='M9 10h14L9 22h14' stroke='%23E8A317' stroke-width='3.2' fill='none' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <script>
+    /* language before first paint: the content below uses html[data-lang] to show .pt or .en */
+    (function () { var l = "pt"; try { l = localStorage.getItem("lang") || ((navigator.language || "").toLowerCase().indexOf("pt") === 0 ? "pt" : "en"); } catch (e) {}
+      var q = new URLSearchParams(location.search).get("lang"); if (q === "pt" || q === "en") l = q;
+      document.documentElement.dataset.lang = l; document.documentElement.lang = l === "pt" ? "pt-BR" : "en"; })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="assets/styles.css?v=3">
+  <script type="module" src="assets/app.js?v=1"></script>
+  <noscript><style>.stage .ask, .stage .lang { display: none; } .stage .hub-list { display: flex; } #typed::before { content: "construindo sistemas inteligentes"; }</style></noscript>
+</head>
+<body>
+  <main class="stage" id="stage">
+    <img class="poster" src="assets/poster.webp" alt="" aria-hidden="true" width="992" height="963" fetchpriority="high">
+    <canvas class="scene" id="scene" aria-hidden="true"></canvas>
+    <div class="labels" id="labels" aria-hidden="true"></div>
+    <svg class="leader" id="leader" aria-hidden="true"><polyline id="leaderLine" points=""/><circle id="leaderDot" r="3"/></svg>
+    <div class="card" id="card" role="tooltip" hidden></div>
+    <section class="answer" id="answer" hidden aria-live="polite">
+      <header><p class="ans-q" id="ansQ"></p><button type="button" id="ansClose" title="Fechar">×</button></header>
+      <p class="ans-text" id="ansText"></p>
+      <ol class="ans-sources" id="ansSources"></ol>
+      <footer class="ans-foot" id="ansFoot"></footer>
+    </section>
+    <svg class="cite-lines" id="cite" aria-hidden="true"><polyline id="citeLine" points=""/><circle id="citeDot" r="4"/></svg>
+    <aside class="telemetry" id="telemetry" hidden aria-live="polite">
+      <header><span id="teleTitle">telemetria</span><button type="button" id="teleClose" title="Fechar">×</button></header>
+      <ol></ol>
+    </aside>
+    <nav class="lang" aria-label="Idioma / Language">
+      <button type="button" data-lang="pt" aria-pressed="true">PT</button>
+      <span aria-hidden="true">·</span>
+      <button type="button" data-lang="en" aria-pressed="false">EN</button>
+    </nav>
+    <section class="intro" id="intro">
+      <p class="term"><span class="term-path">~/andre $</span> <span id="typed" data-pt="construindo sistemas inteligentes" data-en="building intelligent systems"></span><span class="cursor" aria-hidden="true">_</span></p>
+      <h1 class="name">André de Castro Zorzo</h1>
+      <p class="role" id="role" data-pt="Senior backend engineer · IA aplicada" data-en="Senior backend engineer · Applied AI">Senior backend engineer · IA aplicada</p>
+    </section>
+    <form class="ask" id="ask" autocomplete="off">
+      <label class="sr-only" for="q" id="qLabel">Pergunte sobre o trabalho do André</label>
+      <span aria-hidden="true">&gt;</span>
+      <input id="q" type="text" maxlength="500" enterkeyhint="search" spellcheck="false">
+      <button type="submit" id="askGo" title="Perguntar">↵</button>
+    </form>
+    <nav class="hub-list" id="hubList" aria-label="Links">
+      <a href="andre-zorzo-resume.pdf" download data-pt="Currículo (PDF)" data-en="Résumé (PDF)">Currículo (PDF)</a>
+      <a href="https://www.linkedin.com/in/andrezorzo">LinkedIn</a>
+      <a href="https://github.com/andrezorzo">GitHub</a>
+    </nav>
+    <p class="credit">3D brain: <a href="https://3d.nih.gov/entries/3DPX-003455" target="_blank" rel="noopener">Nevit Dilmen, NIH 3D</a> · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a></p>
+    <a class="more" href="#content"><span class="en">career · work · contact</span><span class="pt">carreira · trabalhos · contato</span> ↓</a>
+  </main>
+
+  <div class="content" id="content">
+    <section class="block" id="career" aria-labelledby="career-sec-h">
+      <h2 id="career-sec-h"><span class="path" aria-hidden="true">~/andre/</span><span class="en">career</span><span class="pt">carreira</span></h2>
+      <p class="lede">
+        <span class="en">Senior backend engineer. I build systems that have to stay up: real-time pipelines, serverless APIs on AWS, and the plumbing that lets AI agents use them.</span>
+        <span class="pt">Engenheiro backend sênior. Construo sistemas que não podem cair: pipelines em tempo real, APIs serverless na AWS e a integração que deixa agentes de IA usarem essas APIs.</span>
+      </p>
+      <p class="lede-sub">
+        <span class="en">Passo Fundo, Brazil. Working remotely with US-based teams since 2006.</span>
+        <span class="pt">Passo Fundo, RS. Trabalho remoto com times dos EUA desde 2006.</span>
+      </p>
+      <div class="career" aria-labelledby="career-h">
+        <h3 id="career-h" class="strip-h en">24 years, to scale</h3>
+        <h3 class="strip-h pt">24 anos, em escala</h3>
+        <div class="strip" aria-hidden="true">
+          <div class="seg" style="left:.7%;width:3%"></div>
+          <div class="seg" style="left:5%;width:12%"></div>
+          <div class="seg big" style="left:17.1%;width:72.4%">Alert Logic · 18 <span class="en">&nbsp;years</span><span class="pt">&nbsp;anos</span></div>
+          <div class="seg" style="left:89.6%;width:3.6%"></div>
+          <div class="seg now" style="left:93.4%;width:6.6%"></div>
+        </div>
+        <div class="years" aria-hidden="true"><span style="left:0">2002</span><span style="left:17.1%">2006</span><span style="left:49.3%">2014</span><span style="left:89.5%;transform:translateX(-100%)">2024</span><span class="end en">now</span><span class="end pt">hoje</span></div>
+
+        <ol class="roles">
+          <li class="current">
+            <b>Titan Shark Technology Group</b>
+            <span class="when">2025 – <span class="en">present</span><span class="pt">atual</span></span>
+            <p class="en">AWS backend from scratch for a no-code web builder and CMS. Serverless REST API, MCP integration for AI-assisted editing.</p>
+            <p class="pt">Backend AWS do zero para um construtor de sites e CMS no-code. API REST serverless, integração MCP para edição assistida por IA.</p>
+          </li>
+          <li>
+            <b>Aleo</b>
+            <span class="when">2024 – 2025</span>
+            <p class="en">Tooling for a zero-knowledge Layer 1: on-chain data ingestion in Python, a public REST API and explorer, network monitoring.</p>
+            <p class="pt">Ferramentas para uma Layer 1 de conhecimento zero: ingestão de dados on-chain em Python, API REST e explorer públicos, monitoramento da rede.</p>
+          </li>
+          <li class="alert">
+            <b>Alert Logic</b>
+            <span class="when">2006 – 2024</span>
+            <p class="en">From the PHP customer console to the Python, cloud-native platform behind a 24/7 SOC protecting 4,000+ organizations.</p>
+            <p class="pt">Do console do cliente em PHP à plataforma Python cloud-native por trás de um SOC 24/7 que protege mais de 4.000 organizações.</p>
+          </li>
+          <li>
+            <b>InStrodi</b>
+            <span class="when">2003 – 2006</span>
+            <p class="en">Co-developed Cyclos, an open-source Java platform for community currencies. PHP/MySQL systems and a CMS.</p>
+            <p class="pt">Co-desenvolvi o Cyclos, plataforma Java open-source para moedas comunitárias. Sistemas PHP/MySQL e um CMS.</p>
+          </li>
+          <li>
+            <b><span class="en">Rio Grande do Sul State Government</span><span class="pt">Governo do Estado do RS</span></b>
+            <span class="when">2002</span>
+            <p class="en">First job: the state intranet portal in PHP, plus the Linux servers it ran on.</p>
+            <p class="pt">Primeiro emprego: portal da intranet do estado em PHP e os servidores Linux onde ele rodava.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="block" id="work" aria-labelledby="work-h">
+      <h2 id="work-h"><span class="path" aria-hidden="true">~/andre/</span><span class="en">selected-work</span><span class="pt">trabalhos</span></h2>
+      <div class="work">
+        <article>
+          <h3><span class="en">The SOC floor display</span><span class="pt">O painel do SOC</span></h3>
+          <p class="ctx">Alert Logic</p>
+          <p class="en">A real-time incident display projected on the operations floor, aggregating dozens of incidents per minute across every customer. Redis as the primary store, fed by a polling loop and a push endpoint, so analysts never acted on a stale view.</p>
+          <p class="pt">Painel de incidentes em tempo real projetado na sala de operações, agregando dezenas de incidentes por minuto de todos os clientes. Redis como store principal, alimentado por polling e por um endpoint push, para nenhum analista agir sobre uma visão desatualizada.</p>
+          <ul class="tags"><li>Python</li><li>Redis</li><li>AWS</li></ul>
+        </article>
+        <article>
+          <h3><span class="en">Cross-customer threat correlation</span><span class="pt">Correlação de ameaças entre clientes</span></h3>
+          <p class="ctx">Alert Logic</p>
+          <p class="en">Took over an unfinished ETL pipeline, shipped it on my own and ran it for years. It fed Elasticsearch so analysts could spot one attack hitting many customers at once.</p>
+          <p class="pt">Assumi um pipeline ETL inacabado, entreguei sozinho e mantive por anos. Ele alimentava o Elasticsearch para os analistas enxergarem um mesmo ataque atingindo vários clientes ao mesmo tempo.</p>
+          <ul class="tags"><li>ETL</li><li>Elasticsearch</li><li>Kibana</li></ul>
+        </article>
+        <article>
+          <h3><span class="en">Multi-datacenter for UK compliance</span><span class="pt">Multi-datacenter para compliance no Reino Unido</span></h3>
+          <p class="ctx">Alert Logic</p>
+          <p class="en">Full visibility and failover across datacenters, plus the move from EC2 to ECS.</p>
+          <p class="pt">Visibilidade total e failover entre datacenters, e a migração de EC2 para ECS.</p>
+          <ul class="tags"><li>AWS ECS</li><li><span class="en">Distributed systems</span><span class="pt">Sistemas distribuídos</span></li></ul>
+        </article>
+        <article>
+          <h3><span class="en">A CMS that AI agents can drive</span><span class="pt">Um CMS que agentes de IA conseguem operar</span></h3>
+          <p class="ctx">Titan Shark</p>
+          <p class="en">Serverless REST API on Lambda and API Gateway, exposed through MCP so an AI assistant can create and edit site content directly.</p>
+          <p class="pt">API REST serverless em Lambda e API Gateway, exposta via MCP para um assistente de IA criar e editar o conteúdo do site diretamente.</p>
+          <ul class="tags"><li>AWS Lambda</li><li>MCP</li><li>React</li></ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="block" id="projects" aria-labelledby="proj-h">
+      <h2 id="proj-h"><span class="path" aria-hidden="true">~/andre/</span><span class="en">projects</span><span class="pt">projetos</span></h2>
+      <ul class="repos" id="repos">
+        <li>
+          <a class="repo-name" href="https://github.com/andrezorzo/prosa">prosa</a>
+          <span class="desc"><span class="en">Semantic search over technical PDFs that answers with the exact section and page.</span><span class="pt">Busca semântica em PDFs técnicos que responde com a seção e a página exatas.</span></span>
+          <span class="lang-tag">Python</span>
+        </li>
+      </ul>
+      <p class="note">
+        <span class="en">New projects land on <a href="https://github.com/andrezorzo">GitHub</a> first.</span>
+        <span class="pt">Projetos novos aparecem primeiro no <a href="https://github.com/andrezorzo">GitHub</a>.</span>
+      </p>
+    </section>
+
+    <section class="block contact" id="contact" aria-labelledby="contact-h">
+      <h2 id="contact-h"><span class="path" aria-hidden="true">~/andre/</span><span class="en">contact</span><span class="pt">contato</span></h2>
+      <p class="en">Building something that needs a backend engineer who has kept systems running for two decades? Send me a note.</p>
+      <p class="pt">Está construindo algo que precisa de um engenheiro backend que mantém sistemas no ar há duas décadas? Me manda uma mensagem.</p>
+      <ul class="links">
+        <li><a class="primary" href="mailto:andre_zorzo@yahoo.com"><span class="en">Email me</span><span class="pt">Enviar e-mail</span></a></li>
+        <li><a href="https://www.linkedin.com/in/andrezorzo">LinkedIn</a></li>
+        <li><a href="https://github.com/andrezorzo">GitHub</a></li>
+        <li><a href="https://www.instagram.com/zorzo.dev.br">Instagram</a></li>
+        <li><a href="/andre-zorzo-resume.pdf" download><span class="en">Download résumé (PDF)</span><span class="pt">Baixar currículo (PDF)</span></a></li>
+      </ul>
+    </section>
+    <footer class="foot">© <span id="yr">2026</span> André de Castro Zorzo</footer>
+  </div>
+  <script>
+    /* fallback without the 3D brain: no WebGL now, or the scene has not drawn after 6 s (three.js blocked,
+       script error). The poster stays and the ask box (which needs the scene) becomes plain links. */
+    (function () {
+      var stage = document.getElementById("stage"), c = document.createElement("canvas"), lang = document.documentElement.dataset.lang || "pt";
+      document.getElementById("yr").textContent = new Date().getFullYear();
+      function fallback() {          // the module never ran: fill its texts in the visitor's language
+        stage.classList.add("no-gl");
+        document.querySelectorAll("#hubList [data-en], #role, #typed").forEach(function (el) { el.textContent = el.getAttribute("data-" + lang); });
+        document.documentElement.lang = lang === "pt" ? "pt-BR" : "en";
+      }
+      var gl = null; try { gl = c.getContext("webgl2") || c.getContext("webgl"); } catch (e) {}
+      if (!gl) fallback();
+      else setTimeout(function () { if (!stage.classList.contains("gl")) fallback(); }, 6000);
+    })();
+  </script>
+  <script>
+    // Live repo list: public, non-fork repos. Static list stays if the request fails.
+  fetch('https://api.github.com/users/andrezorzo/repos?per_page=100&sort=pushed')
+    .then(function(r){return r.ok?r.json():Promise.reject()})
+    .then(function(list){
+      var own=list.filter(function(r){return !r.fork && !r.archived && r.name.toLowerCase()!=='andrezorzo'});
+      if(!own.length) return;
+      var ul=document.getElementById('repos'); ul.textContent='';
+      own.forEach(function(r){
+        var li=document.createElement('li');
+        var a=document.createElement('a'); a.className='repo-name'; a.href=r.html_url; a.textContent=r.name;
+        var d=document.createElement('span'); d.className='desc'; d.textContent=r.description||'';
+        var t=document.createElement('span'); t.className='lang-tag'; t.textContent=r.language||'';
+        li.append(a,d,t); ul.appendChild(li);
+      });
+    }).catch(function(){});
+  </script>
+</body>
+</html>
