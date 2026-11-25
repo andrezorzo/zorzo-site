@@ -49,7 +49,8 @@ export function startAsk({ scene: brain, stage, ask, published }) {
   function flyTokens(question, hits, entities, blocked, landed) {
     // the answer never waits on frames: a hidden tab or a stalled scene still gets it after the longest flight
     let fired = false;
-    const onDone = () => { if (!fired) { fired = true; landed(); } };
+    // outside the frame: a bug in the panel must not end the brain, nor the brain's end the answer
+    const onDone = () => { if (!fired) { fired = true; setTimeout(landed); } };
     setTimeout(onDone, flightStart(MAX_TOKENS - 1) + flightDur(MAX_TOKENS - 1) + 300);
     if (!scene) { onDone(); return; }
     const box = $("q").getBoundingClientRect(), sr = stage.getBoundingClientRect();

@@ -28,9 +28,11 @@ if (brainFiles) {
     startHubs(scene, stage);
   } catch (err) {
     console.error(err);   // the still image stays; asking still works
+    scene?.fail();        // a scene already running stops through its own failure path
     scene = null;
   }
 }
+if (scene?.failed) scene = null;
 stage.classList.toggle("no-gl", !scene);
 stage.classList.remove("no-js");   // in case the fallback timer in index.html fired on a slow load
 startAsk({ scene, stage, ask, published });

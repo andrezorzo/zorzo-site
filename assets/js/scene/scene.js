@@ -43,6 +43,11 @@ export function createScene({ canvas, stage, brain: DATA, chunks, entities }) {
     failFns.forEach((fn) => { try { fn(); } catch (err) { console.error(err); } });
   }
   canvas.addEventListener("webglcontextlost", fail);
+  // the interface's callbacks run through here: one that throws ends the brain the same way
+  function dispatch(fns, ...args) {
+    if (failed) return;
+    try { fns.forEach((fn) => fn(...args)); } catch (err) { console.error(err); fail(); }
+  }
   const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: !COARSE, powerPreference: "high-performance" });
   renderer.setClearColor(0x000000, 0);
   // three.js calls this instead of logging the error itself, so the logs are written here
@@ -294,7 +299,7 @@ export function createScene({ canvas, stage, brain: DATA, chunks, entities }) {
     if (tap) {
       const r = canvas.getBoundingClientRect(), i = pick(e.clientX - r.left, e.clientY - r.top);
       if (i >= 0 && i < C) impulse(i);
-      tapFns.forEach((fn) => fn(target(i)));
+      dispatch(tapFns, target(i));
     }
   });
   canvas.addEventListener("pointermove", (e) => {
@@ -313,7 +318,7 @@ export function createScene({ canvas, stage, brain: DATA, chunks, entities }) {
       if (i >= 0 && i < C) { glow[i] = 2; glowAttr.needsUpdate = true; }
       canvas.style.cursor = i >= 0 ? "pointer" : "grab";
     }
-    hoverFns.forEach((fn) => fn(target(i), px, py));
+    dispatch(hoverFns, target(i), px, py);
   });
   // back to rest only when the pointer leaves the page: moving onto the card (or any overlay) keeps the tilt,
   // otherwise the brain swings back and the card slides away from under the pointer
@@ -367,7 +372,7 @@ export function createScene({ canvas, stage, brain: DATA, chunks, entities }) {
         g.cx += (tg.cx - g.cx) * e; g.cy += (tg.cy - g.cy) * e; g.u += (tg.u - g.u) * e; applyView();
       }
     }
-    frameFns.forEach((fn) => fn(now));   // an exception here ends the brain too (fail), like one in the scene
+    dispatch(frameFns, now);
     // background glow sits behind the brain and drifts against the tilt (parallax), so it moves with the scene
     {
       const bx = g.cx - tilt.x * g.u * 0.35, by = g.cy - tilt.y * g.u * 0.25, br = g.u * 2.1;
@@ -404,6 +409,8 @@ export function createScene({ canvas, stage, brain: DATA, chunks, entities }) {
     hold,
     clearHeld,
     simulate,
+    fail,
+    get failed() { return failed; },
     /** The answer panel opened or closed; `panelRight` is its right edge in stage pixels. */
     setAnswering(on, panelRight = null) {
       answering = on;
