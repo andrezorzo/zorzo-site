@@ -40,6 +40,7 @@ export function startAsk({ scene: brain, stage, ask, published, health }) {
     sx /= teleAnchor.length; sy /= teleAnchor.length;
     const w = tele.offsetWidth, h = tele.offsetHeight;
     const ex = below.offsetHeight;   // the box sits above the notice and the examples
+    // 96: the portrait box's bottom and height in styles.css (14px + 50px) plus a 32px gap
     if (portrait) { tele.style.transform = `translate(10px, ${Math.max(8, H - h - 96 - ex)}px)`; return; }
     const openA = !ans.hidden, minLeft = openA ? ans.getBoundingClientRect().right + 24 : 8;
     let left = sx + 120 * s, top = sy - h / 2;

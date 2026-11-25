@@ -246,7 +246,6 @@ svg.cite-lines circle { fill: none; stroke: var(--amber); stroke-width: 1.3; }
 .stage.no-js .ask, .stage.no-js .ask-below, .stage.no-js .lang { display: none; }
 /* without the brain the steps panel has no region to follow: it sits in the top-right corner, under the language switch */
 .stage.no-gl .telemetry { left: auto; right: 16px; top: 64px; }
-
 /* the answer panel takes the space of the hub links while it is open */
 .stage.has-answer .hub-list { display: none; }
 /* the hub links sit above the question box */
