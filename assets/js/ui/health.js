@@ -1,16 +1,18 @@
 // The API's health drives the page's state (zorzo-api LLD "Front against the API", "Health"): checked on load;
 // while offline, again every HEALTH_POLL_INTERVAL and when the tab regains focus, back to online by itself.
-// No polling while online: a failed question reports offline through `offline()`.
+// No polling while online: a question that finds the API unreachable reports it through `offline()`.
 
 import { health } from "../data/api.js";
 
 const HEALTH_POLL_INTERVAL = 30_000;   // zorzo-api LLD "Values and configuration"
 
-/** @param onState called with "online", "degraded" or "offline" on every check */
-export function startHealth(onState) {
-  let state = null, timer = 0, checking = false;
+/** Starts checking now; `state` is "online" until the first check answers. */
+export function startHealth() {
+  let state = "online", timer = 0, checking = false;
+  const subscribers = [];
   function set(next) {
-    state = next; onState(next);
+    state = next;
+    subscribers.forEach((fn) => fn(next));
     clearTimeout(timer);
     if (next === "offline") timer = setTimeout(check, HEALTH_POLL_INTERVAL);
   }
@@ -23,5 +25,10 @@ export function startHealth(onState) {
   addEventListener("focus", recheck);
   document.addEventListener("visibilitychange", recheck);
   check();
-  return { offline: () => set("offline") };
+  return {
+    get state() { return state; },
+    /** Calls fn with every new state ("online", "degraded" or "offline"). */
+    subscribe(fn) { subscribers.push(fn); },
+    offline: () => set("offline"),
+  };
 }

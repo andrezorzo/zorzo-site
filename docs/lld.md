@@ -75,12 +75,13 @@ LLD "Front against the API"; how this code does it:
   Each frame becomes `{kind, ...data}`.
 - `ask()` throws `AskError` with a kind the interface turns into a message: `offline` (`503` or no network;
   it also sets the page offline), `dropped` (the stream ended before `done`), `failed` (any other status,
-  or a frame that isn't JSON). An abort (a new question) throws the browser's `AbortError`, which the
-  interface ignores.
+  a frame that isn't JSON, or an `error` event, with the trace id of the `done` after it, which the
+  interface links). An abort (a new question) throws the browser's `AbortError`, which the interface ignores.
+- `ui/health.js` starts on boot, before the data loads; the box subscribes to its state.
 - The `turnstile` field carries a fixed placeholder until F01-T04 adds the widget.
 - The conversation id is a UUID from `crypto.randomUUID()`, created on the first question and kept in
   `sessionStorage` under `conversation`; with storage blocked, one id per page view.
-- `ui/health.js` checks health on load; while offline, again every `HEALTH_POLL_INTERVAL` and when the tab
+- Health is checked on load; while offline, again every `HEALTH_POLL_INTERVAL` and when the tab
   regains focus or becomes visible. There is no polling while online.
 - A hit whose chunk isn't in the loaded corpus (a version activated after the page loaded) shows as a
   passage by the title the stream sends, with no text, link or brain point.

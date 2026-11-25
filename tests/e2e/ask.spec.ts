@@ -1,4 +1,4 @@
-import { askQuestion, examples, expect, isAsk, serveStream, stream, test } from "./fixtures";
+import { askQuestion, examples, expect, isAsk, isAskRequest, serveStream, stream, test } from "./fixtures";
 
 // The question box against POST /api/v1/ask, read as a stream (zorzo-api LLD "Front against the API").
 
@@ -7,7 +7,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{1
 test("asks the API and reads the stream", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("#stage")).toHaveClass(/ready/);
-  const request = page.waitForRequest((r) => isAsk(new URL(r.url())));
+  const request = page.waitForRequest(isAskRequest);
   await askQuestion(page, "Which cloud services does he use?");
   const sent = await request;
   expect(sent.method()).toBe("POST");
@@ -27,8 +27,8 @@ test("a new question cancels the current one", async ({ page }) => {
   });
   await page.goto("/");
   await expect(page.locator("#stage")).toHaveClass(/ready/);
-  const aborted = page.waitForEvent("requestfailed", (r) => isAsk(new URL(r.url())));
-  const sent = page.waitForRequest((r) => isAsk(new URL(r.url())));
+  const aborted = page.waitForEvent("requestfailed", isAskRequest);
+  const sent = page.waitForRequest(isAskRequest);
   await askQuestion(page, "Which cloud services does he use?");
   await sent;
   await askQuestion(page, "zebra quantum lasagna");
@@ -40,7 +40,7 @@ test("a new question cancels the current one", async ({ page }) => {
 
 test("keeps the conversation id across a reload", async ({ page }) => {
   const sessions: string[] = [];
-  page.on("request", (r) => { if (isAsk(new URL(r.url()))) sessions.push(r.postDataJSON().session); });
+  page.on("request", (r) => { if (isAskRequest(r)) sessions.push(r.postDataJSON().session); });
   await page.goto("/");
   await expect(page.locator("#stage")).toHaveClass(/ready/);
   expect(await page.evaluate(() => Object.keys(sessionStorage))).toEqual([]);   // none before the first question
@@ -84,7 +84,7 @@ test("clicking an example asks it", async ({ page }) => {
   const example = examples.find((e) => e.lang === "en")!;
   await page.goto("/");
   await expect(page.locator("#stage")).toHaveClass(/ready/);
-  const request = page.waitForRequest((r) => isAsk(new URL(r.url())));
+  const request = page.waitForRequest(isAskRequest);
   await page.locator("#askExamples button", { hasText: example.text }).click();
   expect((await request).postDataJSON().q).toBe(example.text);
   await expect(page.locator("#q")).toHaveValue(example.text);

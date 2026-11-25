@@ -1,4 +1,4 @@
-import { test as base, expect, type Page } from "@playwright/test";
+import { test as base, expect, type Page, type Request } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
@@ -15,6 +15,7 @@ export const examples: { id: string; lang: string; text: string }[] = JSON.parse
 const STREAMS = path.join(__dirname, "..", "fixtures", "streams");
 export const stream = (name: "passages" | "no-passages" | "error") => readFileSync(path.join(STREAMS, `${name}.sse`), "utf8");
 export const isAsk = (url: URL) => url.pathname === "/api/v1/ask";
+export const isAskRequest = (r: Request) => isAsk(new URL(r.url()));
 export const isHealth = (url: URL) => url.pathname === "/api/healthz";
 export const healthy = { status: "ok", mode: "normal", db: "ok" };
 

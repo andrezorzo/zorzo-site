@@ -16,10 +16,10 @@ const flightDur = (n) => 950 + n * 40;
  * @param scene the brain's controls, or null without 3D
  * @param ask (question, {signal}) → async iterator of stream events
  * @param published { corpus, examples, entities }
- * @param onOffline called when a question finds the API unreachable
- * @returns { setHealth(state) }: "online", "degraded" or "offline", from ui/health.js
+ * @param health the API's health (ui/health.js): its state drives the box, and a question that finds the API
+ *   unreachable reports it
  */
-export function startAsk({ scene: brain, stage, ask, published, onOffline }) {
+export function startAsk({ scene: brain, stage, ask, published, health }) {
   let scene = brain;   // becomes null if the brain fails: from then on, the path without 3D
   const chunks = published.corpus.chunks;
   const byId = new Map(chunks.map((c, k) => [c.id, k]));
@@ -126,10 +126,10 @@ export function startAsk({ scene: brain, stage, ask, published, onOffline }) {
   }
   function showBlocked() { ansText.textContent = t().blocked; ansText.className = "ans-text warn"; }
   /** A question that got no answer: the reason, and the public trace when the API sent one. */
-  function showFailure(failure, traceId) {
-    ansText.textContent = failure === "offline" ? t().offline : failure === "dropped" ? t().connectionLost : t().error;
+  function showFailure({ kind, traceId }) {
+    ansText.textContent = kind === "offline" ? t().offline : kind === "dropped" ? t().connectionLost : t().error;
     ansText.className = "ans-text warn";
-    if (failure !== "error" || !traceId) return;
+    if (!traceId) return;
     const note = document.createElement("p"), link = document.createElement("a");
     note.className = "ans-note"; link.href = `/dash/t/${encodeURIComponent(traceId)}`; link.textContent = t().trace;
     note.append(link); ansText.after(note);
@@ -186,7 +186,7 @@ export function startAsk({ scene: brain, stage, ask, published, onOffline }) {
     teleList.replaceChildren(); tele.hidden = false; teleOn = true;
     teleAnchor = scene ? [scene.hubPoint(1)] : [];
     teleLine(t().query(words(question).length, question.length));
-    let hits = [], blocked = null, failure = null, traceId = null, retrieveMs = null;
+    let hits = [], ks = [], blocked = null, failure = null, retrieveMs = null;
     try {
       for await (const ev of ask(question, { signal })) {
         if (signal.aborted) return;
@@ -203,28 +203,23 @@ export function startAsk({ scene: brain, stage, ask, published, onOffline }) {
           teleLine(t().retrieve(hits.length, chunks.length, retrieveMs));
           if (hits.length) teleLine(t().relevance(hits[0].score.toFixed(3), (hits.at(-1).score / hits[0].score).toFixed(2)));
           else teleLine(t().noHits, "warn");
-          const known = hits.filter((h) => byId.has(h.id));
-          if (scene && known.length) teleAnchor = known.map((h) => byId.get(h.id));
-        } else if (ev.kind === "error") {
-          failure = "error";
-        } else if (ev.kind === "done") {
-          traceId = ev.trace_id;
+          ks = hits.map((h) => byId.get(h.id)).filter((k) => k !== undefined);   // the hits with a brain point
+          if (scene && ks.length) teleAnchor = ks;
         }
       }
     } catch (err) {
       if (signal.aborted) return;
-      failure = err instanceof AskError ? err.kind : "failed";
-      if (failure === "offline") onOffline();
+      failure = err instanceof AskError ? err : new AskError("failed");
+      if (failure.kind === "offline") health.offline();
       console.error(err);
     }
     teleLine(t().latency((performance.now() - t0).toFixed(0)));
     teleLine(t().cost, "dim");
-    const ks = hits.filter((h) => byId.has(h.id)).map((h) => byId.get(h.id));   // the hits with a brain point
     // the answer opens once the tokens land, so the brain lights up first
     flyTokens(question, ks, named, Boolean(blocked), () => {
       if (signal.aborted) return;
       startPanel(question);
-      if (failure) showFailure(failure, traceId);
+      if (failure) showFailure(failure);
       else if (blocked) showBlocked();
       else if (!hits.length) showNoSources();
       else showPassages(hits, signal);
@@ -254,12 +249,10 @@ export function startAsk({ scene: brain, stage, ask, published, onOffline }) {
   }
   const below = $("askBelow"), note = $("askNote"), exList = $("askExamples");
   // the box, the intro and the hub links sit above the notice and the examples, by their height
-  new ResizeObserver(() => stage.style.setProperty("--ex", `${below.offsetHeight}px`)).observe(below);
+  new ResizeObserver(([entry]) => stage.style.setProperty("--ex", `${entry.borderBoxSize[0].blockSize}px`)).observe(below);
 
   /* ---- API health: offline disables the box; search-only mode shows a notice before any question */
-  let health = "online";
   function setHealth(state) {
-    health = state;
     const off = state === "offline";
     $("q").disabled = off; $("askGo").disabled = off;
     exList.classList.toggle("off", off);
@@ -281,12 +274,12 @@ export function startAsk({ scene: brain, stage, ask, published, onOffline }) {
     $("teleTitle").textContent = t().tele;
     rotatePlaceholder();
     fillExamples(exList);
-    setHealth(health);
+    setHealth(health.state);
   });
+  health.subscribe(setHealth);
 
   if (scene) {
     scene.onFrame((now) => { stepFlights(now); placeTele(); placeCite(); });
     scene.onFail(() => { scene = null; clearFlights(); hoverChunk(null, -1); tele.style.transform = ""; });
   }
-  return { setHealth };
 }

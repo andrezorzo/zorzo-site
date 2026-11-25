@@ -5,9 +5,12 @@
 const SESSION_KEY = "conversation";
 const TURNSTILE = "unverified";   // the API only checks it is non-empty until F01-T04 adds the widget
 
-/** Why a question got no stream: offline (503 or no network), dropped (cut before `done`), failed (anything else). */
+/**
+ * Why a question got no answer: offline (503 or no network), dropped (the stream ended before `done`), failed
+ * (any other status, a frame that isn't JSON, or an `error` event, whose `done` gives the trace id).
+ */
 export class AskError extends Error {
-  constructor(kind, status) { super(`ask ${kind}${status ? ` (${status})` : ""}`); this.kind = kind; this.status = status; }
+  constructor(kind, traceId = null) { super(`ask ${kind}`); this.kind = kind; this.traceId = traceId; }
 }
 
 let memoryId = null;   // when session storage is blocked: one id for this page view
@@ -63,7 +66,7 @@ async function* read(body, signal) {
       }
     }
   } finally {
-    if (!signal.aborted) reader.cancel().catch(() => {});   // the reader stopped early: release the connection
+    reader.cancel().catch(() => {});   // stopped early or ended: release the connection (a no-op after an abort)
   }
 }
 
@@ -72,6 +75,7 @@ async function* read(body, signal) {
  * no stream or it ends early; an abort through `signal` throws the browser's AbortError.
  */
 export async function* ask(question, { signal }) {
+  let failed = false;
   let res;
   try {
     res = await fetch("/api/v1/ask", {
@@ -84,10 +88,12 @@ export async function* ask(question, { signal }) {
     if (signal.aborted) throw err;
     throw new AskError("offline");
   }
-  if (res.status === 503) throw new AskError("offline", 503);
-  if (!res.ok || !res.body) throw new AskError("failed", res.status);
+  if (res.status === 503) throw new AskError("offline");
+  if (!res.ok || !res.body) throw new AskError("failed");
   try {
     for await (const ev of read(res.body, signal)) {
+      if (ev.kind === "error") { failed = true; continue; }   // only `done` follows, with the trace id
+      if (ev.kind === "done" && failed) throw new AskError("failed", ev.trace_id);
       yield ev;
       if (ev.kind === "done") return;
     }
