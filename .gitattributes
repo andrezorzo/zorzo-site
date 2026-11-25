@@ -1,0 +1,2 @@
+# recorded API streams: byte for byte (CRLF line endings, as the API sends them)
+tests/fixtures/streams/*.sse -text

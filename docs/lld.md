@@ -40,8 +40,9 @@ assets/js/
   text.js        question and chunk words (search and token flight share the split)
   util.js        $, accent-free lowercase, seeded random numbers
   scene/         the brain: layout.js (where chunks sit), shaders.js, scene.js (render, picking, impulses)
-  ui/            intro.js, hubs.js (labels and cards), ask.js (box, steps, token flight, answer panel)
-  data/          published.js (manifest → corpus, examples; entity links), mock.js (the stand-in for the API)
+  ui/            intro.js, hubs.js (labels and cards), ask.js (box, examples, steps, token flight, answer
+                 panel), health.js (online, degraded, offline)
+  data/          published.js (manifest → corpus, examples; entity links), api.js (the API client)
 ```
 
 **Dependencies between modules**
@@ -52,7 +53,7 @@ flowchart LR
     main -- "creates" --> scene
     main -- "loads" --> data
     ui -- "drives: fire, impulse, hold, setAnswering" --> scene
-    ui -- "asks: ask(question, {signal})" --> data
+    ui -- "asks: ask(question, {signal}), health()" --> data
 ```
 
 Allowed imports only; shared helpers (`util.js`, `text.js`, `i18n.js`) are left out.
@@ -61,13 +62,32 @@ Allowed imports only; shared helpers (`util.js`, `text.js`, `i18n.js`) are left 
   scene never imports the data. The scene receives the chunks and the entities as arguments.
 - The interface works when the scene is absent (`scene` is `null`): every brain effect is skipped and the rest
   stays the same (section 4).
-- Answers reach the interface only as stream events from `ask(question, {signal})`, an async iterator. Today
-  `data/mock.js` produces them; F01-T03 replaces it with the API client without touching the interface.
+- Answers reach the interface only as stream events from `ask(question, {signal})`, an async iterator in
+  `data/api.js`.
 
-**The mock.** A BM25 search over the published corpus, with a boost for chunks that name an entity in the
-question, emitting what the API emits in search-only mode: `stage` (`guard`, `retrieve`), then `degraded`
-and `retrieval` with up to six hits, then `done`. A question shaped like an attempt to override the rules
-gets `blocked` and `done`. Situation: existing until F01-T03.
+**The API client.** How the page behaves against the API (health, conversation id, reactions) is in zorzo-api
+LLD "Front against the API"; how this code does it:
+
+- Same origin: the paths are `/api/v1/ask` and `/api/healthz`, with no base URL setting (zorzo-api ADR 0003).
+- `ask()` sends `POST /api/v1/ask` with `fetch` and reads the body with its own SSE reader: `event:` and
+  `data:` lines up to a blank line, `\r\n` or `\n` endings, `: ping` comments skipped, a frame split across
+  network chunks reassembled. No library: the format is a few lines, and nothing loads from another origin.
+  Each frame becomes `{kind, ...data}`.
+- `ask()` throws `AskError` with a kind the interface turns into a message: `offline` (`503` or no network;
+  it also sets the page offline), `dropped` (the stream ended before `done`), `failed` (any other status,
+  or a frame that isn't JSON). An abort (a new question) throws the browser's `AbortError`, which the
+  interface ignores.
+- The `turnstile` field carries a fixed placeholder until F01-T04 adds the widget.
+- The conversation id is a UUID from `crypto.randomUUID()`, created on the first question and kept in
+  `sessionStorage` under `conversation`; with storage blocked, one id per page view.
+- `ui/health.js` checks health on load; while offline, again every `HEALTH_POLL_INTERVAL` and when the tab
+  regains focus or becomes visible. There is no polling while online.
+- A hit whose chunk isn't in the loaded corpus (a version activated after the page loaded) shows as a
+  passage by the title the stream sends, with no text, link or brain point.
+
+**Example questions.** A list under the question box, in the interface language, hidden while an answer is
+open and while offline; clicking one asks it. The box, the intro and the hub links sit above the list by its
+measured height (`--ex`), which stays reserved while an answer is open, so nothing moves when one opens.
 
 ## 3. Brain data
 
@@ -124,14 +144,21 @@ Situation: existing.
 - **Production:** the front reads `data/manifest.json` and the folder it names, published by the ingest.
   Without it (before the first publish, or a failed request) the corpus is empty: the brain has no chunk
   points and every question finds no sources, but the page works.
-- **Locally:** `data/` is a copy of the API's `DATA_DIR` (git-ignored). When its manifest is missing (404),
+- **Locally:** `tools/serve.py` serves the repository and forwards `/api/*` to the API (`API_URL`, by default
+  `http://127.0.0.1:8000`), streaming the response, so the page has one origin as in production. Without the
+  API the page is offline; the brain still draws. `data/` is a copy of the API's `DATA_DIR` (git-ignored). When its manifest is missing (404),
   and only on a local host,
   the front reads `demo-data/`: the prototype's corpus (127 chunks of the résumé, the Prosa README, the
   GitHub profile and the first site spec) converted to the published format by
   `tools/convert_mock_corpus.py`, so the brain looks as it does today until the real corpus exists.
   `demo-data/` is never deployed.
 - **Tests:** Playwright serves the repository and answers `data/` requests with `tests/fixtures/data/`, the
-  published data of zorzo-api's fixture corpus produced by the real ingest with the fake embedder.
+  published data of zorzo-api's fixture corpus produced by the real ingest with the fake embedder, and
+  `/api/` requests by interception: health as each test needs it, and the question with a stream from
+  `tests/fixtures/streams/`. Those are recorded from the real API in search-only mode over the same database
+  (`tools/record_streams.py`), byte for byte, so the hit ids match the fixture corpus; only `error.sse` is
+  written by hand, since the API sends `error` only on a bug. Every event of every stream validates against
+  the copy of zorzo-api's `contracts/sse-v1.schema.json` next to them (`streams.spec.ts`, with Ajv).
 
 ## 6. Assets and licenses
 

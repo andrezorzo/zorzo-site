@@ -26,11 +26,12 @@ Run from the repository root. The site has no build: what is in the repository i
 
 | What | Command |
 | --- | --- |
-| Serve the site locally | `npm run serve`, then open http://127.0.0.1:4173 |
+| Serve the site locally | `npm run serve`, then open http://127.0.0.1:4173; `/api/*` goes to the API at `API_URL` (default http://127.0.0.1:8000, zorzo-api's compose or `uv run python -m rag_api`) |
 | Use the API's published data instead of the demo copy | `cp -r ../zorzo-api/var/data ./data` (after an ingest with `--activate`; see zorzo-api `apps/ingest/AGENTS.md`) |
 | Install the test tools | `npm ci && npx playwright install chromium` |
 | Browser tests | `npm test` |
-| Refresh the test fixture | in zorzo-api, ingest `tests/fixtures/corpus` with `EMBEDDER=fake APP_ENV=local --activate` into an empty `DATA_DIR`, then copy that folder to `tests/fixtures/data/` |
+| Refresh the test fixture | in zorzo-api, ingest `tests/fixtures/corpus` with `EMBEDDER=fake APP_ENV=local --activate` into an empty database and `DATA_DIR`, then copy that folder to `tests/fixtures/data/` |
+| Refresh the recorded streams | with that database, run the API with `EMBEDDER=fake RERANKER=fake APP_ENV=local` (a `LIMITS_FILE` copy with a short `ping_interval` puts `: ping` comments in the streams), then `python3 tools/record_streams.py http://127.0.0.1:<port>`; the error stream stays as written |
 | Rebuild the brain data | download the mesh (see `tools/build_brain.py`), then `uv run tools/build_brain.py` |
 | Rebuild the still image | `npm run serve`, then `uv run tools/make_poster.py` |
 
@@ -38,8 +39,8 @@ Run from the repository root. The site has no build: what is in the repository i
 
 - How the front is built (modules, the brain's data, the fallback without 3D) is in `docs/lld.md`; read it
   before changing `assets/js/`.
-- The interface gets answers only through `ask(question, {signal})` and its stream events; it never reads the
-  search directly. The scene and the data never import the interface.
+- The interface gets answers only through `ask(question, {signal})` and its stream events (`data/api.js`); it
+  never calls `fetch` for the API itself. The scene and the data never import the interface.
 - Nothing loads from another origin: libraries and fonts are vendored with their license files.
 - Text the visitor reads goes through `i18n.js`, in both languages.
 

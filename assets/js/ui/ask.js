@@ -3,6 +3,7 @@
 // "Stream events"); the brain, when there is one, only reacts to them. Without the brain everything here works
 // the same, minus the effects (F01 PRD, story S11).
 
+import { AskError } from "../data/api.js";
 import { currentLang, onLang, t } from "../i18n.js";
 import { namedIn, term, words } from "../text.js";
 import { $, REDUCED } from "../util.js";
@@ -15,8 +16,10 @@ const flightDur = (n) => 950 + n * 40;
  * @param scene the brain's controls, or null without 3D
  * @param ask (question, {signal}) → async iterator of stream events
  * @param published { corpus, examples, entities }
+ * @param onOffline called when a question finds the API unreachable
+ * @returns { setHealth(state) }: "online", "degraded" or "offline", from ui/health.js
  */
-export function startAsk({ scene: brain, stage, ask, published }) {
+export function startAsk({ scene: brain, stage, ask, published, onOffline }) {
   let scene = brain;   // becomes null if the brain fails: from then on, the path without 3D
   const chunks = published.corpus.chunks;
   const byId = new Map(chunks.map((c, k) => [c.id, k]));
@@ -122,17 +125,21 @@ export function startAsk({ scene: brain, stage, ask, published }) {
     openAnswer(true);
   }
   function showBlocked() { ansText.textContent = t().blocked; ansText.className = "ans-text warn"; }
-  function showError() { ansText.textContent = t().error; ansText.className = "ans-text warn"; }
+  /** A question that got no answer: the reason, and the public trace when the API sent one. */
+  function showFailure(failure, traceId) {
+    ansText.textContent = failure === "offline" ? t().offline : failure === "dropped" ? t().connectionLost : t().error;
+    ansText.className = "ans-text warn";
+    if (failure !== "error" || !traceId) return;
+    const note = document.createElement("p"), link = document.createElement("a");
+    note.className = "ans-note"; link.href = `/dash/t/${encodeURIComponent(traceId)}`; link.textContent = t().trace;
+    note.append(link); ansText.after(note);
+  }
   function showNoSources() {
     ansText.textContent = t().noSources;
     if (!examplesInLang().length) return;
     const hint = document.createElement("p"); hint.className = "ans-note"; hint.textContent = t().tryExamples;
     const list = document.createElement("ul"); list.className = "ans-examples";
-    examplesInLang().forEach((ex) => {
-      const li = document.createElement("li"), b = document.createElement("button");
-      b.type = "button"; b.textContent = ex.text; b.addEventListener("click", () => submit(ex.text));
-      li.append(b); list.append(li);
-    });
+    fillExamples(list);
     ansText.after(hint, list);
   }
   function showPassages(hits, signal) {
@@ -143,19 +150,24 @@ export function startAsk({ scene: brain, stage, ask, published }) {
     // passages appear one by one, each lighting its chunk, as the claims of an answer will
     hits.forEach((hit, n) => setTimeout(() => {
       if (signal.aborted) return;
-      const k = byId.get(hit.id); if (k === undefined) return;
-      const ch = chunks[k], li = document.createElement("li"), b = document.createElement("button");
+      // a chunk this page's corpus doesn't have (a version activated after the page loaded) shows by the title
+      // the stream sends, with no text, link or brain point
+      const k = byId.get(hit.id), ch = k === undefined ? null : chunks[k];
+      const li = document.createElement("li"), b = document.createElement("button");
       b.type = "button"; b.className = "src";
       const row = document.createElement("span"); row.className = "src-top";
-      const a = document.createElement("span"); a.textContent = `[${n + 1}] ${ch.title} › ${ch.heading.split(/ [›>] /).pop()}`;
+      const a = document.createElement("span");
+      a.textContent = ch ? `[${n + 1}] ${ch.title} › ${ch.heading.split(/ [›>] /).pop()}` : `[${n + 1}] ${hit.title}`;
       const rel = document.createElement("span"); rel.className = "rel"; rel.style.setProperty("--rel", (hit.score / top).toFixed(2)); rel.textContent = (hit.score / top).toFixed(2);
       row.append(a, rel);
+      b.append(row);
+      li.append(b); ansSrc.append(li);
+      if (!ch) return;
       const sn = document.createElement("span"); sn.className = "src-text"; sn.textContent = ch.text;
-      b.append(row, sn);
+      b.append(sn);
       b.addEventListener("mouseenter", () => hoverChunk(b, k));
       b.addEventListener("mouseleave", () => hoverChunk(null, -1));
       b.addEventListener("click", () => scene?.impulse(k, 2, true));
-      li.append(b); ansSrc.append(li);
       if (/^https?:\/\//i.test(ch.source_url || "")) {   // only web links: never a javascript: URL from the data
         const link = document.createElement("a"); link.className = "src-link"; link.href = ch.source_url; link.textContent = ch.source_url;
         link.target = "_blank"; link.rel = "noopener"; li.append(link);
@@ -174,7 +186,7 @@ export function startAsk({ scene: brain, stage, ask, published }) {
     teleList.replaceChildren(); tele.hidden = false; teleOn = true;
     teleAnchor = scene ? [scene.hubPoint(1)] : [];
     teleLine(t().query(words(question).length, question.length));
-    let hits = [], blocked = null, failed = false, retrieveMs = null;
+    let hits = [], blocked = null, failure = null, traceId = null, retrieveMs = null;
     try {
       for await (const ev of ask(question, { signal })) {
         if (signal.aborted) return;
@@ -187,28 +199,32 @@ export function startAsk({ scene: brain, stage, ask, published }) {
         } else if (ev.kind === "degraded") {
           teleLine(t().searchOnly, "dim");
         } else if (ev.kind === "retrieval") {
-          hits = ev.hits.filter((h) => byId.has(h.id));
+          hits = ev.hits;
           teleLine(t().retrieve(hits.length, chunks.length, retrieveMs));
-          if (hits.length) teleLine(t().relevance(hits[0].score.toFixed(1), (hits.at(-1).score / hits[0].score).toFixed(2)));
+          if (hits.length) teleLine(t().relevance(hits[0].score.toFixed(3), (hits.at(-1).score / hits[0].score).toFixed(2)));
           else teleLine(t().noHits, "warn");
-          if (scene && hits.length) teleAnchor = hits.map((h) => byId.get(h.id));
+          const known = hits.filter((h) => byId.has(h.id));
+          if (scene && known.length) teleAnchor = known.map((h) => byId.get(h.id));
         } else if (ev.kind === "error") {
-          failed = true;
+          failure = "error";
+        } else if (ev.kind === "done") {
+          traceId = ev.trace_id;
         }
       }
     } catch (err) {
       if (signal.aborted) return;
-      failed = true;
+      failure = err instanceof AskError ? err.kind : "failed";
+      if (failure === "offline") onOffline();
       console.error(err);
     }
     teleLine(t().latency((performance.now() - t0).toFixed(0)));
     teleLine(t().cost, "dim");
-    const ks = hits.map((h) => byId.get(h.id));
+    const ks = hits.filter((h) => byId.has(h.id)).map((h) => byId.get(h.id));   // the hits with a brain point
     // the answer opens once the tokens land, so the brain lights up first
     flyTokens(question, ks, named, Boolean(blocked), () => {
       if (signal.aborted) return;
       startPanel(question);
-      if (failed) showError();
+      if (failure) showFailure(failure, traceId);
       else if (blocked) showBlocked();
       else if (!hits.length) showNoSources();
       else showPassages(hits, signal);
@@ -227,8 +243,29 @@ export function startAsk({ scene: brain, stage, ask, published }) {
   $("teleClose").addEventListener("click", stop);
   $("ansClose").addEventListener("click", () => { stop(); openAnswer(false); });
 
-  /* ---- example questions of the interface language: the box's rotating placeholder */
+  /* ---- example questions of the interface language: the list under the box and the rotating placeholder */
   const examplesInLang = () => published.examples.filter((e) => e.lang === currentLang());
+  function fillExamples(list) {
+    list.replaceChildren(...examplesInLang().map((ex) => {
+      const li = document.createElement("li"), b = document.createElement("button");
+      b.type = "button"; b.textContent = ex.text; b.addEventListener("click", () => submit(ex.text));
+      li.append(b); return li;
+    }));
+  }
+  const below = $("askBelow"), note = $("askNote"), exList = $("askExamples");
+  // the box, the intro and the hub links sit above the notice and the examples, by their height
+  new ResizeObserver(() => stage.style.setProperty("--ex", `${below.offsetHeight}px`)).observe(below);
+
+  /* ---- API health: offline disables the box; search-only mode shows a notice before any question */
+  let health = "online";
+  function setHealth(state) {
+    health = state;
+    const off = state === "offline";
+    $("q").disabled = off; $("askGo").disabled = off;
+    exList.classList.toggle("off", off);
+    note.hidden = state === "online";
+    note.textContent = off ? t().offline : state === "degraded" ? t().degradedNotice : "";
+  }
   let phTimer = 0, phIndex = 0;
   function rotatePlaceholder() {
     clearInterval(phTimer); phIndex = 0;
@@ -243,10 +280,13 @@ export function startAsk({ scene: brain, stage, ask, published }) {
     $("askGo").title = t().send; $("ansClose").title = t().close; $("teleClose").title = t().close;
     $("teleTitle").textContent = t().tele;
     rotatePlaceholder();
+    fillExamples(exList);
+    setHealth(health);
   });
 
   if (scene) {
     scene.onFrame((now) => { stepFlights(now); placeTele(); placeCite(); });
     scene.onFail(() => { scene = null; clearFlights(); hoverChunk(null, -1); tele.style.transform = ""; });
   }
+  return { setHealth };
 }

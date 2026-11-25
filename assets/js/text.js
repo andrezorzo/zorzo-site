@@ -1,4 +1,4 @@
-// Question and chunk words, without stop words: the mock search and the token flight use the same split.
+// Question and chunk words, without stop words: the token flight matches a question word to the chunks that have it.
 
 import { norm } from "./util.js";
 
