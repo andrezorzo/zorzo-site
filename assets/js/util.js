@@ -2,6 +2,9 @@
 
 export const $ = (id) => document.getElementById(id);
 
+/** Served from this machine (tools/serve.py): the demo data and Turnstile's test key apply only here. */
+export const LOCAL = ["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);
+
 /** Lowercase without accents, for matching words in Portuguese and English alike. */
 export const norm = (x) => x.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 

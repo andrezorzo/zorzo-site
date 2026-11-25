@@ -2,9 +2,7 @@
 // of the active corpus version, which holds corpus.json and examples.json. Read once per page load.
 
 import { wholeWord } from "../text.js";
-import { fetchJson, norm } from "../util.js";
-
-const LOCAL = ["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);
+import { fetchJson, LOCAL, norm } from "../util.js";
 
 // Production serves data/ from the bucket. Locally, data/ is a copy of the API's DATA_DIR; without it, the demo
 // copy of the prototype's corpus keeps the brain as it looks today (zorzo-site LLD, "Development data").

@@ -1,6 +1,14 @@
 // Interface text in Portuguese and English, and the current language (zorzo-api LLD "Front against the API",
 // "Interface language"): set in <head> before the first paint, saved when the visitor switches.
 
+/** A wait in seconds, in words: seconds under a minute, then minutes, then hours (rounded up). */
+function wait(s, lang) {
+  const [n, unit] = s < 60 ? [Math.max(1, Math.ceil(s)), "s"] : s < 3600 ? [Math.ceil(s / 60), "m"] : [Math.ceil(s / 3600), "h"];
+  const names = lang === "pt" ? { s: ["segundo", "segundos"], m: ["minuto", "minutos"], h: ["hora", "horas"] }
+    : { s: ["second", "seconds"], m: ["minute", "minutes"], h: ["hour", "hours"] };
+  return `${n} ${names[unit][n === 1 ? 0 : 1]}`;
+}
+
 const T = {
   pt: {
     typed: "construindo sistemas inteligentes", role: "Senior backend engineer · IA aplicada",
@@ -23,6 +31,9 @@ const T = {
     noSources: "Nenhuma fonte combina com esta pergunta.", tryExamples: "Tente uma destas:",
     sources: (n) => `Fontes · ${n}`, error: "Algo deu errado. Pergunte de novo.", trace: "Ver o trace desta pergunta",
     connectionLost: "A conexão caiu antes do fim. Pergunte de novo.",
+    invalidInput: "Não deu para enviar esta pergunta. Use texto simples, com até 500 caracteres.",
+    botCheck: "A verificação anti-robô falhou. Recarregue a página e tente de novo.",
+    tryAgainIn: (s) => `Muitas perguntas seguidas. Você pode perguntar de novo ${s == null ? "daqui a pouco" : `em ${wait(s, "pt")}`}.`,
     offline: "O backend está fora do ar. A caixa volta sozinha quando ele voltar.",
     degradedNotice: "Modo só busca: as respostas mostram os trechos das fontes, sem texto escrito por IA.",
   },
@@ -47,6 +58,9 @@ const T = {
     noSources: "No matching sources for this question.", tryExamples: "Try one of these:",
     sources: (n) => `Sources · ${n}`, error: "Something went wrong. Ask again.", trace: "See the trace of this question",
     connectionLost: "The connection dropped before the end. Ask again.",
+    invalidInput: "This question can't be sent. Use plain text, up to 500 characters.",
+    botCheck: "The bot check failed. Reload the page and try again.",
+    tryAgainIn: (s) => `Too many questions in a row. You can ask again ${s == null ? "shortly" : `in ${wait(s, "en")}`}.`,
     offline: "The backend is unreachable. The box comes back by itself when it returns.",
     degradedNotice: "Search-only mode: answers show the source passages, with no AI-written text.",
   },

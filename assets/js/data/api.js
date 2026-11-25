@@ -3,18 +3,21 @@
 // are relative. Each stream event becomes {kind, ...data}, the shape the interface reads.
 
 const SESSION_KEY = "conversation";
-const TURNSTILE = "unverified";   // the API only checks it is non-empty until F01-T04 adds the widget
 // 503 from the API; 502 and 504 from CloudFront or Caddy when the API doesn't answer (LLD "Front against the API")
 const OFFLINE_STATUS = new Set([502, 503, 504]);
 const HEALTH_TIMEOUT = 10_000;   // a check that hangs counts as offline, so the next one can run
 
 /**
- * Why a question got no answer: offline (502, 503, 504 or no network), dropped (the stream ended before `done`), failed
- * (any other status, a frame that isn't JSON, or an `error` event, whose `done` gives the trace id).
+ * Why a question got no answer: the gate refused it (invalid: 422; bot: 403, or no bot-check token; limited: 429,
+ * with `retryAfter` in seconds), offline (502, 503, 504 or no network), dropped (the stream ended before `done`),
+ * failed (any other status, a frame that isn't JSON, or an `error` event, whose `done` gives the trace id).
  */
 export class AskError extends Error {
-  constructor(kind, traceId = null) { super(`ask ${kind}`); this.kind = kind; this.traceId = traceId; }
+  constructor(kind, { traceId = null, retryAfter = null } = {}) {
+    super(`ask ${kind}`); this.kind = kind; this.traceId = traceId; this.retryAfter = retryAfter;
+  }
 }
+const GATE_STATUS = { 422: "invalid", 403: "bot", 429: "limited" };   // the gate's refusals (LLD "Errors")
 
 let memoryId = null;   // when session storage is blocked: one id for this page view
 /** The conversation id: a UUID created on the first question, kept in the tab's session storage. */
@@ -76,18 +79,25 @@ async function* read(body, signal) {
   }
 }
 
+/** Seconds from a `Retry-After` header in seconds (the form the API sends), or null. */
+function retryAfter(res) {
+  const value = Number.parseInt(res.headers.get("Retry-After") ?? "", 10);
+  return Number.isFinite(value) && value >= 0 ? value : null;
+}
+
 /**
- * Asks the API: POST /api/v1/ask, read as a stream of events ending with `done`. Throws AskError when there is
- * no stream or it ends early; an abort through `signal` throws the browser's AbortError.
+ * Asks the API: POST /api/v1/ask with the question's bot-check token, read as a stream of events ending with
+ * `done`. Throws AskError when there is no stream or it ends early; an abort through `signal` throws the
+ * browser's AbortError.
  */
-export async function* ask(question, { signal }) {
+export async function* ask(question, { signal, token }) {
   let failed = false;
   let res;
   try {
     res = await fetch("/api/v1/ask", {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
-      body: JSON.stringify({ q: question, session: sessionId(), turnstile: TURNSTILE }),
+      body: JSON.stringify({ q: question, session: sessionId(), turnstile: token }),
       signal,
     });
   } catch (err) {
@@ -95,11 +105,12 @@ export async function* ask(question, { signal }) {
     throw new AskError("offline");
   }
   if (OFFLINE_STATUS.has(res.status)) throw new AskError("offline");
+  if (GATE_STATUS[res.status]) throw new AskError(GATE_STATUS[res.status], { retryAfter: retryAfter(res) });
   if (!res.ok || !res.body) throw new AskError("failed");
   try {
     for await (const ev of read(res.body, signal)) {
       if (ev.kind === "error") { failed = true; continue; }   // only `done` follows, with the trace id
-      if (ev.kind === "done" && failed) throw new AskError("failed", ev.trace_id);
+      if (ev.kind === "done" && failed) throw new AskError("failed", { traceId: ev.trace_id });
       yield ev;
       if (ev.kind === "done") return;
     }

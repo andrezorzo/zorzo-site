@@ -26,8 +26,11 @@ Status labels used below: **existing**, **planned**, **to detail**.
 | Three.js 0.170.0, vendored in `assets/vendor/three/` | The brain. Served from this site (zorzo-api ADR 0003, single origin): no request to a CDN on page load |
 | JetBrains Mono 400 and 500 (latin, latin-ext), vendored in `assets/fonts/` | The only typeface. From `@fontsource/jetbrains-mono` 5.3.0, OFL-1.1 |
 | Playwright, through npm, for tests only | Browser tests against recorded data, with no backend (zorzo-api spec F01, seam 2) |
+| Cloudflare Turnstile, loaded from `challenges.cloudflare.com` | The bot check every question carries (zorzo-api LLD "Security"). Cloudflare forbids serving the script from anywhere else, so it is the one exception below |
 
-The page loads nothing from another origin. The GitHub repository list in the content section is static.
+The page loads nothing from another origin except Turnstile's script, and that only on the first interaction with
+the question box: a visitor who only browses never contacts Cloudflare. The GitHub repository list in the
+content section is static.
 
 ## 2. Modules
 
@@ -41,7 +44,7 @@ assets/js/
   util.js        $, accent-free lowercase, seeded random numbers
   scene/         the brain: layout.js (where chunks sit), shaders.js, scene.js (render, picking, impulses)
   ui/            intro.js, hubs.js (labels and cards), ask.js (box, examples, steps, token flight, answer
-                 panel), health.js (online, degraded, offline)
+                 panel), health.js (online, degraded, offline), turnstile.js (the bot-check token)
   data/          published.js (manifest → corpus, examples; entity links), api.js (the API client)
 ```
 
@@ -53,7 +56,7 @@ flowchart LR
     main -- "creates" --> scene
     main -- "loads" --> data
     ui -- "drives: fire, impulse, hold, setAnswering" --> scene
-    ui -- "asks: ask(question, {signal}), health()" --> data
+    ui -- "asks: ask(question, {signal, token}), health()" --> data
 ```
 
 Allowed imports only; shared helpers (`util.js`, `text.js`, `i18n.js`) are left out.
@@ -62,8 +65,8 @@ Allowed imports only; shared helpers (`util.js`, `text.js`, `i18n.js`) are left 
   scene never imports the data. The scene receives the chunks and the entities as arguments.
 - The interface works when the scene is absent (`scene` is `null`): every brain effect is skipped and the rest
   stays the same (section 4).
-- Answers reach the interface only as stream events from `ask(question, {signal})`, an async iterator in
-  `data/api.js`.
+- Answers reach the interface only as stream events from `ask(question, {signal, token})`, an async iterator
+  in `data/api.js`.
 
 **The API client.** How the page behaves against the API (health, conversation id, reactions) is in zorzo-api
 LLD "Front against the API"; how this code does it:
@@ -71,14 +74,22 @@ LLD "Front against the API"; how this code does it:
 - Same origin: the paths are `/api/v1/ask` and `/api/healthz`, with no base URL setting (zorzo-api ADR 0003).
 - `ask()` sends `POST /api/v1/ask` with `fetch` and reads the body with its own SSE reader: `event:` and
   `data:` lines up to a blank line, `\r\n` or `\n` endings, `: ping` comments skipped, a frame split across
-  network chunks reassembled. No library: the format is a few lines, and nothing loads from another origin.
+  network chunks reassembled. No library: the format is a few lines.
   Each frame becomes `{kind, ...data}`.
-- `ask()` throws `AskError` with a kind the interface turns into a message: `offline` (`502`, `503`, `504` or
+- `ask()` throws `AskError` with a kind the interface turns into a message: the gate's refusals, `invalid`
+  (`422`, shown under the box), `bot` (`403`) and `limited` (`429`, with `Retry-After` in seconds, shown as a
+  wait in words); `offline` (`502`, `503`, `504` or
   no network; it also sets the page offline), `dropped` (the stream ended before `done`), `failed` (any other status,
   a frame that isn't JSON, or an `error` event, with the trace id of the `done` after it, which the
   interface links). An abort (a new question) throws the browser's `AbortError`, which the interface ignores.
 - `ui/health.js` starts on boot, before the data loads; the box subscribes to its state.
-- The `turnstile` field carries a fixed placeholder until F01-T04 adds the widget.
+- **Bot check:** `ui/turnstile.js` renders Cloudflare's invisible widget in `execute` mode on the first focus,
+  key or pointer press on the box or the examples, and fetches a token ahead. Each question takes the token,
+  which resets the widget and fetches the next one at once. A `403` gets one more try with a new token; no
+  token (script blocked, widget error or timeout) sends nothing and shows the bot-check message. On a local
+  host the widget uses Cloudflare's invisible always-pass test key (the same host check that picks
+  `demo-data/`); the production site key comes with the deploy, and until then production has no token and the
+  gate refuses every question.
 - The conversation id is a UUID from `crypto.randomUUID()`, created on the first question and kept in
   `sessionStorage` under `conversation`; with storage blocked, one id per page view.
 - Health is checked on load; while offline, again every `HEALTH_POLL_INTERVAL` and when the tab
@@ -161,7 +172,8 @@ Situation: existing.
   `demo-data/` is never deployed.
 - **Tests:** Playwright serves the repository and answers `data/` requests with `tests/fixtures/data/`, the
   published data of zorzo-api's fixture corpus produced by the real ingest with the fake embedder, and
-  `/api/` requests by interception: health as each test needs it, and the question with a stream from
+  `/api/` requests by interception: health as each test needs it, Turnstile's script by a stub that hands out a
+  new token after each reset (`fixtures.ts`), and the question with a stream from
   `tests/fixtures/streams/`. Those are recorded from the real API in search-only mode over the same database
   (`tools/record_streams.py`), byte for byte, so the hit ids match the fixture corpus; only `error.sse` is
   written by hand, since the API sends `error` only on a bug. Every event of every stream validates against

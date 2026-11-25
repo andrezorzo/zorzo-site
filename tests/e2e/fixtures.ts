@@ -24,6 +24,37 @@ export async function serveStream(page: Page, body: string) {
   await page.route(isAsk, (route) => route.fulfill({ status: 200, contentType: "text/event-stream", body }));
 }
 
+/** POST /api/v1/ask answers with a gate refusal: the catalog body, and these headers. */
+export async function serveError(page: Page, status: number, code: string, headers: Record<string, string> = {}) {
+  await page.route(isAsk, (route) => route.fulfill({
+    status, headers, json: { error: { code, message: code, trace_id: "5d1c2b9a-8d4e-4f6a-b2c1-9e7d5a3b1c0f" } },
+  }));
+}
+
+// Cloudflare's Turnstile script, replaced by a stub: the tests never reach Cloudflare. Like the real widget, a
+// challenge after a reset hands out a new token (`stub-token-1`, `stub-token-2`…), and one without a reset
+// hands out the same token again. With `window.__turnstile = "error"` set before the page loads, every
+// challenge fails instead.
+const TURNSTILE_STUB = `
+window.turnstile = (() => {
+  let n = 0, opts = null, fresh = true;
+  return {
+    render(el, o) { opts = o; return "widget"; },
+    execute() {
+      setTimeout(() => {
+        if (window.__turnstile === "error") return opts["error-callback"]();
+        if (fresh) { n++; fresh = false; }
+        opts.callback("stub-token-" + n);
+      });
+    },
+    reset() { fresh = true; },
+  };
+})();`;
+export const isTurnstile = (url: URL) => url.hostname === "challenges.cloudflare.com";
+export async function serveTurnstile(page: Page) {
+  await page.route(isTurnstile, (route) => route.fulfill({ contentType: "text/javascript", body: TURNSTILE_STUB }));
+}
+
 /** GET /api/healthz answers with this status and body. */
 export async function serveHealth(page: Page, status: number, body: object) {
   await page.route(isHealth, (route) => route.fulfill({ status, json: body }));
@@ -51,12 +82,14 @@ export async function askQuestion(page: Page, question: string) {
   await page.locator("#q").press("Enter");
 }
 
-// Every test starts with the published fixture data, a healthy API and the stream with passages; a test
+// Every test starts with the published fixture data, a healthy API, the Turnstile stub and the stream with
+// passages; a test
 // overrides a route by adding its own (the last route added answers first).
 export const test = base.extend<{ fixtureData: void }>({
   fixtureData: [async ({ page }, use) => {
     await serveFixture(page);
     await serveHealth(page, 200, healthy);
+    await serveTurnstile(page);
     await serveStream(page, stream("passages"));
     await use();
   }, { auto: true }],

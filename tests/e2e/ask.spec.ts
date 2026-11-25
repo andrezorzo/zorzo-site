@@ -14,7 +14,7 @@ test("asks the API and reads the stream", async ({ page }) => {
   const body = sent.postDataJSON();
   expect(body.q).toBe("Which cloud services does he use?");
   expect(body.session).toMatch(UUID);
-  expect(body.turnstile).not.toBe("");
+  expect(body.turnstile).toBe("stub-token-1");   // from the Turnstile stub (fixtures.ts)
   await expect(page.locator("#telemetry")).toContainText("rerank");
   await expect(page.locator("#ansSources .src")).toHaveCount(6);
 });

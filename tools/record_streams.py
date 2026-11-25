@@ -15,6 +15,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "tests" / "fixtures" / "streams"
 SESSION = "7d0f4c2e-5b1a-4c3e-9f6d-2a8b1c0e4d55"   # any UUID: the API keeps no state in search-only mode
+# The dummy token of Turnstile's test site keys; the API runs with the always-pass test secret, which accepts it.
+TOKEN = "XXXX.DUMMY.TOKEN.XXXX"
 QUESTIONS = {
     "passages": "backend AWS remote business hours events queues hybrid search citation",   # six fixture hits
     "no-passages": "zebra quantum lasagna",                                                    # no hit
@@ -24,7 +26,7 @@ api = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8000"
 zorzo_api = Path(sys.argv[2]) if len(sys.argv) > 2 else ROOT.parent / "zorzo-api"
 OUT.mkdir(parents=True, exist_ok=True)
 for name, question in QUESTIONS.items():
-    body = json.dumps({"q": question, "session": SESSION, "turnstile": "unverified"}).encode()
+    body = json.dumps({"q": question, "session": SESSION, "turnstile": TOKEN}).encode()
     request = urllib.request.Request(f"{api}/api/v1/ask", body, {"Content-Type": "application/json"})
     with urllib.request.urlopen(request, timeout=30) as response:
         (OUT / f"{name}.sse").write_bytes(response.read())

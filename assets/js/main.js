@@ -8,6 +8,7 @@ import { startAsk } from "./ui/ask.js";
 import { startHealth } from "./ui/health.js";
 import { startHubs } from "./ui/hubs.js";
 import { startIntro } from "./ui/intro.js";
+import { startTurnstile } from "./ui/turnstile.js";
 import { $, fetchJson, REDUCED, webglAvailable } from "./util.js";
 
 const stage = $("stage");
@@ -36,5 +37,6 @@ if (brainFiles) {
 }
 stage.classList.toggle("no-gl", !scene);
 stage.classList.remove("no-js");   // in case the fallback timer in index.html fired on a slow load
-startAsk({ scene, stage, ask, published, health: apiHealth });
+const bot = startTurnstile({ container: $("turnstile"), triggers: [$("ask"), $("askExamples")] });
+startAsk({ scene, stage, ask, published, health: apiHealth, bot });
 stage.classList.add("ready");

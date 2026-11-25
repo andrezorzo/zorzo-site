@@ -39,9 +39,10 @@ Run from the repository root. The site has no build: what is in the repository i
 
 - How the front is built (modules, the brain's data, the fallback without 3D) is in `docs/lld.md`; read it
   before changing `assets/js/`.
-- The interface gets answers only through `ask(question, {signal})` and its stream events (`data/api.js`); it
+- The interface gets answers only through `ask(question, {signal, token})` and its stream events (`data/api.js`); it
   never calls `fetch` for the API itself. The scene and the data never import the interface.
-- Nothing loads from another origin: libraries and fonts are vendored with their license files.
+- Nothing loads from another origin: libraries and fonts are vendored with their license files. The one
+  exception is Cloudflare Turnstile's script, which Cloudflare forbids serving from anywhere else (`docs/lld.md`, "Stack").
 - Text the visitor reads goes through `i18n.js`, in both languages.
 
 ## Web platform
