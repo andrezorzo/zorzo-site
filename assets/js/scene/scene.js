@@ -410,7 +410,6 @@ export function createScene({ canvas, stage, brain: DATA, chunks, entities }) {
     clearHeld,
     simulate,
     fail,
-    get failed() { return failed; },
     /** The answer panel opened or closed; `panelRight` is its right edge in stage pixels. */
     setAnswering(on, panelRight = null) {
       answering = on;

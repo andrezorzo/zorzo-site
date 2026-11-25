@@ -32,7 +32,6 @@ if (brainFiles) {
     scene = null;
   }
 }
-if (scene?.failed) scene = null;
 stage.classList.toggle("no-gl", !scene);
 stage.classList.remove("no-js");   // in case the fallback timer in index.html fired on a slow load
 startAsk({ scene, stage, ask, published });

@@ -207,12 +207,15 @@ export function startAsk({ scene: brain, stage, ask, published }) {
     // the answer opens once the tokens land, so the brain lights up first
     flyTokens(question, ks, named, Boolean(blocked), () => {
       if (signal.aborted) return;
-      if (scene && ks.length) { scene.hold(ks); scene.impulse(ks[0], 2, true); }
       startPanel(question);
       if (failed) showError();
       else if (blocked) showBlocked();
       else if (!hits.length) showNoSources();
       else showPassages(hits, signal);
+      // the answer is on screen first; a brain effect that throws then ends the brain, not the answer
+      if (scene && ks.length) {
+        try { scene.hold(ks); scene.impulse(ks[0], 2, true); } catch (err) { console.error(err); scene.fail(); }
+      }
     });
   }
   function submit(question) { $("q").value = question; run(question); }
