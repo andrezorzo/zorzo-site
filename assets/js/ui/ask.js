@@ -33,21 +33,18 @@ export function startAsk({ scene: brain, stage, ask, published, health }) {
 
   /* ---- steps panel, next to the region the answer comes from */
   function teleLine(txt, cls) {
+    // when the list scrolls (portrait), it follows the newest step unless the visitor scrolled up to read
+    const atEnd = teleList.scrollHeight - teleList.scrollTop - teleList.clientHeight < 4;
     const li = document.createElement("li"); li.textContent = txt; if (cls) li.className = cls; teleList.append(li);
-    tele.scrollTop = tele.scrollHeight;   // when its height is capped (portrait), the newest step stays in view
+    if (atEnd) teleList.scrollTop = teleList.scrollHeight;
   }
   function placeTele() {
     if (!scene || !teleOn || !teleAnchor.length) return;
     const { W, H, s, portrait } = scene.size();
+    if (portrait) { tele.style.transform = ""; return; }   // CSS puts it right above the box
     let sx = 0, sy = 0; teleAnchor.forEach((i) => { const [x, y] = scene.screenOf(i); sx += x; sy += y; });
     sx /= teleAnchor.length; sy /= teleAnchor.length;
     const w = tele.offsetWidth, h = tele.offsetHeight;
-    if (portrait) {   // above the box, wherever the safe area and the examples put it; a long list scrolls
-      const boxTop = $("ask").getBoundingClientRect().top - stage.getBoundingClientRect().top;
-      tele.style.maxHeight = `${Math.max(0, boxTop - 40)}px`;
-      tele.style.transform = `translate(10px, ${Math.max(8, boxTop - h - 32)}px)`; return;
-    }
-    tele.style.maxHeight = "";
     const ex = below.offsetHeight;   // the box sits above the notice and the examples
     const openA = !ans.hidden, minLeft = openA ? ans.getBoundingClientRect().right + 24 : 8;
     let left = sx + 120 * s, top = sy - h / 2;
@@ -291,6 +288,6 @@ export function startAsk({ scene: brain, stage, ask, published, health }) {
 
   if (scene) {
     scene.onFrame((now) => { stepFlights(now); placeTele(); placeCite(); });
-    scene.onFail(() => { scene = null; clearFlights(); hoverChunk(null, -1); tele.style.transform = ""; tele.style.maxHeight = ""; });
+    scene.onFail(() => { scene = null; clearFlights(); hoverChunk(null, -1); tele.style.transform = ""; });
   }
 }
