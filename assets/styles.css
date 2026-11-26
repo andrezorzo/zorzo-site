@@ -91,6 +91,8 @@ html { scroll-behavior: smooth; }
 .ask-examples { margin: 0; }
 .ask-examples button { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .has-answer .ask-examples, .stage.offline .ans-examples { visibility: hidden; }
+/* the free-tier notice: always under the box, so it is read before a question is sent */
+.ask-privacy { margin: 0 0 8px; color: var(--muted); font-size: 12px; line-height: 1.4; }
 
 /* tokens in flight */
 .tok {
@@ -170,6 +172,9 @@ svg.cite-lines circle { fill: none; stroke: var(--amber); stroke-width: 1.3; }
   .card a { font-size: 13px; padding: 8px 12px; }
   .ask { bottom: calc(14px + env(safe-area-inset-bottom) + var(--ex)); height: 50px; }
   .ask-below { bottom: calc(18px + env(safe-area-inset-bottom)); width: calc(100vw - 28px); font-size: 13px; }
+  /* the free-tier notice takes the room of two example questions, so the stack keeps its height */
+  .ask-privacy { font-size: 11px; }
+  .ask-examples li:nth-child(n+4) { display: none; }
   .telemetry { min-width: 0; width: calc(100vw - 20px); font-size: 11.5px; padding: 6px 10px; background: rgba(8, 12, 26, .78); }
   .telemetry header { font-size: 10.5px; }
   .has-answer .telemetry { display: none; }
@@ -346,6 +351,8 @@ html[data-lang="en"] .pt, html[data-lang="pt"] .en { display: none !important; }
 .content .links a:hover, .content .links a:focus-visible { border-color: rgba(216, 254, 254, .6); }
 .content .links a.primary { border-color: rgba(245, 213, 138, .55); color: var(--amber); }
 .foot { padding: 96px 0 40px; color: var(--muted); font-size: 13px; }
+.foot p { margin: 0; }
+.foot .foot-privacy { max-width: var(--measure); margin-top: 8px; }
 @media (max-aspect-ratio: 17/20) { .more { bottom: calc(80px + env(safe-area-inset-bottom) + var(--ex)); } }
 /* the hero's glow fades into the page below (no hard edge where the stage ends) */
 .stage::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 16%; background: linear-gradient(rgba(0, 1, 4, 0), var(--ink-0)); pointer-events: none; }
