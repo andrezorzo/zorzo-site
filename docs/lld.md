@@ -105,11 +105,12 @@ LLD "Front against the API"; how this code does it:
 **Example questions.** A list under the question box, in the interface language, hidden while an answer is
 open; clicking one asks it. While offline every example list is hidden, the answer panel's too. The box, the
 intro and the hub links sit above the list by its measured height (`--ex`), which stays reserved while an
-answer is open, so nothing moves when one opens. On a phone the list shows three examples, so the free-tier
-notice fits without pushing the box onto the intro.
+answer is open, so nothing moves when one opens. Where height is short (a phone either way up, or a window
+under 520 px tall) the list shows three examples, so the free-tier notice doesn't push the box onto the intro.
 
-**Free-tier notice.** One line between the box's notices and the example questions, always shown, and the
-full text, with the providers named, in the footer (zorzo-api LLD "Front against the API").
+**Free-tier notice.** A short paragraph between the box's notices and the example questions, always shown and
+linked to the input with `aria-describedby`, and the full text, with the providers named, in the footer
+(zorzo-api LLD "Front against the API"). Without JavaScript it is hidden with the box.
 
 ## 3. Brain data
 

@@ -93,6 +93,12 @@ html { scroll-behavior: smooth; }
 .has-answer .ask-examples, .stage.offline .ans-examples { visibility: hidden; }
 /* the free-tier notice: always under the box, so it is read before a question is sent */
 .ask-privacy { margin: 0 0 8px; color: var(--muted); font-size: 12px; line-height: 1.4; }
+/* where height is short (phones, either way up) the notice is smaller and the list shows three examples, so the
+   box doesn't climb onto the intro */
+@media (max-aspect-ratio: 17/20), (max-height: 520px) {
+  .ask-privacy { font-size: 11px; }
+  .ask-examples li:nth-child(n+4) { display: none; }
+}
 
 /* tokens in flight */
 .tok {
@@ -172,9 +178,7 @@ svg.cite-lines circle { fill: none; stroke: var(--amber); stroke-width: 1.3; }
   .card a { font-size: 13px; padding: 8px 12px; }
   .ask { bottom: calc(14px + env(safe-area-inset-bottom) + var(--ex)); height: 50px; }
   .ask-below { bottom: calc(18px + env(safe-area-inset-bottom)); width: calc(100vw - 28px); font-size: 13px; }
-  /* the free-tier notice takes the room of two example questions, so the stack keeps its height */
-  .ask-privacy { font-size: 11px; }
-  .ask-examples li:nth-child(n+4) { display: none; }
+  .ask-privacy { padding-top: 6px; }   /* clear of the box, which overlaps the stack's top by a few pixels */
   .telemetry { min-width: 0; width: calc(100vw - 20px); font-size: 11.5px; padding: 6px 10px; background: rgba(8, 12, 26, .78); }
   .telemetry header { font-size: 10.5px; }
   .has-answer .telemetry { display: none; }
