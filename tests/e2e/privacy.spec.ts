@@ -9,11 +9,11 @@ test.use({ locale: "en-US" });   // the page starts in the browser's language
 test("the free-tier notice shows under the box and names the providers in the footer", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("#askPrivacy")).toBeVisible();
-  await expect(page.locator("#askPrivacy")).toHaveText(/^\s*Mostly free AI tiers: your questions may train models/, shown);
+  await expect(page.locator("#askPrivacy")).toHaveText(/^\s*Mostly free AI tiers: questions may be used to train models/, shown);
   await expect(page.locator("#footPrivacy")).toContainText("OpenRouter, Groq, NVIDIA and Google", shown);
   await expect(page.locator("#q")).toHaveAttribute("aria-describedby", "askPrivacy");
   await page.getByRole("button", { name: "PT", exact: true }).click();
-  await expect(page.locator("#askPrivacy")).toHaveText(/^\s*Sobretudo free tiers de IA: suas perguntas podem treinar/, shown);
+  await expect(page.locator("#askPrivacy")).toHaveText(/^\s*Sobretudo free tiers de IA: perguntas podem ser usadas para treino/, shown);
   await expect(page.locator("#footPrivacy")).toContainText("OpenRouter, Groq, NVIDIA e Google", shown);
 });
 
@@ -28,10 +28,11 @@ for (const locale of ["en-US", "pt-BR"]) {
       test("the notice fits: three examples, and in portrait the box clear of the intro", async ({ page }) => {
         await page.goto("/");
         await expect(page.locator("#stage")).toHaveClass(/ready/);
+        await expect(page.locator("html")).toHaveAttribute("data-lang", locale.slice(0, 2));
         await expect(page.locator("#askExamples li").first()).toBeVisible();
         await expect(page.locator("#askExamples li:visible")).toHaveCount(3);
         await expect(page.locator("#askPrivacy")).toBeVisible();
-        if (viewport.width > viewport.height) return;
+        if (viewport.width / viewport.height > 17 / 20) return;   // the phone layout's breakpoint
         const role = await page.locator("#role").boundingBox();
         const ask = await page.locator("#ask").boundingBox();
         expect(ask!.y).toBeGreaterThanOrEqual(role!.y + role!.height);
