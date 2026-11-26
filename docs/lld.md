@@ -1,6 +1,6 @@
 # LLD — zorzo.dev.br (zorzo-site)
 
-2026-11-25 · André de Castro Zorzo · Status: draft
+2026-11-26 · André de Castro Zorzo · Status: draft
 
 Scope: how the static front is built and how it renders, including the 3D brain. What the system does, the
 API contract and how the front behaves against the API live in zorzo-api: `docs/lld.md`, section "8. Client",
@@ -105,7 +105,12 @@ LLD "Front against the API"; how this code does it:
 **Example questions.** A list under the question box, in the interface language, hidden while an answer is
 open; clicking one asks it. While offline every example list is hidden, the answer panel's too. The box, the
 intro and the hub links sit above the list by its measured height (`--ex`), which stays reserved while an
-answer is open, so nothing moves when one opens.
+answer is open, so nothing moves when one opens. Narrower than 17:20, or under 520 px tall, the list shows
+three examples, so the free-tier notice doesn't push the box onto the intro.
+
+**Free-tier notice.** A short paragraph between the box's notices and the example questions, always shown and
+linked to the input with `aria-describedby`, and the full text, with the providers named, in the footer
+(zorzo-api LLD "Front against the API"). Without JavaScript it is hidden with the box.
 
 ## 3. Brain data
 

@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="assets/fonts/fonts.css">
   <link rel="stylesheet" href="assets/styles.css">
   <script type="module" src="assets/js/main.js"></script>
-  <noscript><style>.stage .ask, .stage .lang { display: none; } .stage .hub-list { display: flex; } #typed::before { content: "construindo sistemas inteligentes"; }</style></noscript>
+  <noscript><style>.stage .ask, .stage .ask-below, .stage .lang { display: none; } .stage .hub-list { display: flex; } #typed::before { content: "construindo sistemas inteligentes"; }</style></noscript>
 </head>
 <body>
   <main class="stage" id="stage">
@@ -53,12 +53,16 @@
     <form class="ask" id="ask" autocomplete="off">
       <label class="sr-only" for="q" id="qLabel">Pergunte sobre o trabalho do André</label>
       <span aria-hidden="true">&gt;</span>
-      <input id="q" type="text" maxlength="500" enterkeyhint="search" spellcheck="false">
+      <input id="q" type="text" aria-describedby="askPrivacy" maxlength="500" enterkeyhint="search" spellcheck="false">
       <button type="submit" id="askGo" title="Perguntar">↵</button>
     </form>
     <div class="ask-below" id="askBelow">
       <p class="ask-note ask-error" id="askError" role="alert" hidden></p>
       <p class="ask-note" id="askNote" role="status" hidden></p>
+      <p class="ask-privacy" id="askPrivacy">
+        <span class="en">Mostly free AI tiers: questions may be used to train models. Don't type personal data.</span>
+        <span class="pt">Sobretudo free tiers de IA: perguntas podem ser usadas para treino. Não digite dados pessoais.</span>
+      </p>
       <ul class="ans-examples ask-examples" id="askExamples"></ul>
     </div>
     <div class="turnstile" id="turnstile" aria-hidden="true"></div>
@@ -190,7 +194,13 @@
         <li><a href="/andre-zorzo-resume.pdf" download><span class="en">Download résumé (PDF)</span><span class="pt">Baixar currículo (PDF)</span></a></li>
       </ul>
     </section>
-    <footer class="foot">© <span id="yr">2026</span> André de Castro Zorzo</footer>
+    <footer class="foot">
+      <p>© <span id="yr">2026</span> André de Castro Zorzo</p>
+      <p class="foot-privacy" id="footPrivacy">
+        <span class="en">Answers use the free tiers of OpenRouter, Groq, NVIDIA and Google, and a paid model on OpenRouter, with a daily cap, when those run out. Questions and the passages sent with them may be used by these providers to train their models.</span>
+        <span class="pt">As respostas usam os free tiers de OpenRouter, Groq, NVIDIA e Google e, quando eles acabam, um modelo pago no OpenRouter, com teto diário. Perguntas e trechos enviados podem ser usados por eles para treinar modelos.</span>
+      </p>
+    </footer>
   </div>
   <script>
     /* the module never ran (blocked, old browser, script error): the still image and the plain links stay,
