@@ -236,10 +236,6 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
     b.addEventListener("click", () => submit(example.text));
     p.append(b); return p;
   }
-  /** The `contact` intent's reply: a line inviting the visitor to reach André; the links follow it. */
-  function showContactReply() {
-    ansText.textContent = t().contactReply;
-  }
   /** Opens the draft, marked as being checked; checked claims replace it. */
   function startDraft() {
     ansText.className = "ans-text draft";
@@ -391,7 +387,7 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
       else if (claims.length) showClaims(claims, hits);
       else if (outcome === "abstained") showAbstention(hits, signal, suggestionNote(done?.suggestion));
       else if (outcome === "declined") showDecline(suggestionNote(done?.suggestion));
-      else if (outcome === "answered") showContactReply();
+      else if (outcome === "answered") ansText.textContent = t().contactReply;   // the `contact` intent: the links follow
       else if (!hits.length) showNoSources();
       else showPassages(hits, signal);
       // the contact options follow every reply, a block and a failure excepted
