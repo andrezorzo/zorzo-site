@@ -148,38 +148,118 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
     fillExamples(list);
     ansText.after(hint, list);
   }
+  /**
+   * One source in the panel's list: its number, title and heading, its text and link from corpus.json. A
+   * chunk this page's corpus doesn't have (a version activated after the page loaded) shows by the title the
+   * stream sends, with no text, link or brain point.
+   */
+  function sourceItem(id, title, n, rel) {
+    const k = byId.get(id), ch = k === undefined ? null : chunks[k];
+    const li = document.createElement("li"), b = document.createElement("button");
+    li.dataset.id = id; b.type = "button"; b.className = "src";
+    const row = document.createElement("span"); row.className = "src-top";
+    const a = document.createElement("span");
+    a.textContent = ch ? `[${n}] ${ch.title} › ${ch.heading.split(/ [›>] /).pop()}` : `[${n}] ${title}`;
+    row.append(a);
+    if (rel !== undefined) {
+      const r = document.createElement("span"); r.className = "rel"; r.style.setProperty("--rel", rel.toFixed(2)); r.textContent = rel.toFixed(2);
+      row.append(r);
+    }
+    b.append(row);
+    li.append(b); ansSrc.append(li);
+    if (!ch) return li;
+    const sn = document.createElement("span"); sn.className = "src-text"; sn.textContent = ch.text;
+    b.append(sn);
+    b.addEventListener("mouseenter", () => hoverChunk(b, k));
+    b.addEventListener("mouseleave", () => hoverChunk(null, -1));
+    b.addEventListener("click", () => { li.classList.toggle("is-open"); scene?.impulse(k, 2, true); });
+    if (/^https?:\/\//i.test(ch.source_url || "")) {   // only web links: never a javascript: URL from the data
+      const link = document.createElement("a"); link.className = "src-link"; link.href = ch.source_url; link.textContent = ch.source_url;
+      link.target = "_blank"; link.rel = "noopener"; li.append(link);
+    }
+    scene?.fire(k);
+    return li;
+  }
+  function sourcesHeading(text) {
+    const head = document.createElement("h4"); head.textContent = text;
+    ansSrc.append(head);
+  }
+  function sourceList(hits, signal, heading = t().sources(hits.length)) {
+    sourcesHeading(heading);
+    const top = hits[0]?.score || 1;
+    // passages appear one by one, each lighting its chunk
+    hits.forEach((hit, n) => setTimeout(() => { if (!signal.aborted) sourceItem(hit.id, hit.title, n + 1, hit.score / top); }, n * 120));
+  }
   function showPassages(hits, signal) {
     ansText.textContent = t().searchOnlyNotice;
-    const head = document.createElement("h4"); head.textContent = t().sources(hits.length);
-    ansSrc.append(head);
-    const top = hits[0]?.score || 1;
-    // passages appear one by one, each lighting its chunk, as the claims of an answer will
-    hits.forEach((hit, n) => setTimeout(() => {
-      if (signal.aborted) return;
-      // a chunk this page's corpus doesn't have (a version activated after the page loaded) shows by the title
-      // the stream sends, with no text, link or brain point
-      const k = byId.get(hit.id), ch = k === undefined ? null : chunks[k];
-      const li = document.createElement("li"), b = document.createElement("button");
-      b.type = "button"; b.className = "src";
-      const row = document.createElement("span"); row.className = "src-top";
-      const a = document.createElement("span");
-      a.textContent = ch ? `[${n + 1}] ${ch.title} › ${ch.heading.split(/ [›>] /).pop()}` : `[${n + 1}] ${hit.title}`;
-      const rel = document.createElement("span"); rel.className = "rel"; rel.style.setProperty("--rel", (hit.score / top).toFixed(2)); rel.textContent = (hit.score / top).toFixed(2);
-      row.append(a, rel);
-      b.append(row);
-      li.append(b); ansSrc.append(li);
-      if (!ch) return;
-      const sn = document.createElement("span"); sn.className = "src-text"; sn.textContent = ch.text;
-      b.append(sn);
-      b.addEventListener("mouseenter", () => hoverChunk(b, k));
-      b.addEventListener("mouseleave", () => hoverChunk(null, -1));
-      b.addEventListener("click", () => scene?.impulse(k, 2, true));
-      if (/^https?:\/\//i.test(ch.source_url || "")) {   // only web links: never a javascript: URL from the data
-        const link = document.createElement("a"); link.className = "src-link"; link.href = ch.source_url; link.textContent = ch.source_url;
-        link.target = "_blank"; link.rel = "noopener"; li.append(link);
+    sourceList(hits, signal);
+  }
+  function contactNote() {
+    const p = document.createElement("p"), a = document.createElement("a");
+    p.className = "ans-note"; a.href = "#contact"; a.textContent = t().contactLink;
+    p.append(a); return p;
+  }
+  /** Opens the draft, marked as being checked; checked claims replace it. */
+  function startDraft() {
+    ansText.className = "ans-text draft";
+    const mark = document.createElement("p"); mark.className = "ans-note ans-checking"; mark.textContent = t().checking;
+    ansText.after(mark);
+  }
+  function clearDraft() {
+    ans.querySelectorAll(".ans-checking").forEach((el) => el.remove());
+    ansText.className = "ans-text"; ansText.replaceChildren();
+  }
+  /**
+   * The checked claims: each with numbered citations (numbered in order of first use), an unsupported one
+   * struck through as removed, the gap sentence as a plain note; the cited sources listed below, a citation
+   * opening its passage.
+   */
+  function showClaims(claims, hits) {
+    clearDraft();
+    const order = [];   // chunk ids in citation order; a removed claim shows no citation, so it adds none
+    for (const c of claims) if (c.verdict !== "unsupported") for (const id of c.sources) if (!order.includes(id)) order.push(id);
+    const items = new Map();
+    for (const c of claims) {
+      const span = document.createElement("span"); span.className = `claim ${c.verdict}`;
+      if (c.verdict === "unsupported") {
+        const s = document.createElement("s"); s.textContent = c.text;
+        const why = document.createElement("span"); why.className = "claim-why"; why.textContent = ` (${t().removed})`;
+        span.append(s, why);
+      } else {
+        span.append(c.text);
+        for (const id of c.sources) {
+          const n = order.indexOf(id) + 1, b = document.createElement("button");
+          b.type = "button"; b.className = "cite"; b.textContent = `[${n}]`; b.setAttribute("aria-label", t().cite(n));
+          b.addEventListener("click", () => openSource(items.get(id)));
+          span.append(" ", b);
+        }
       }
-      scene?.fire(k);
-    }, n * 120));
+      ansText.append(span, " ");
+    }
+    if (!order.length) return;
+    sourcesHeading(t().sources(order.length));
+    const titles = new Map(hits.map((h) => [h.id, h.title]));
+    order.forEach((id, i) => items.set(id, sourceItem(id, titles.get(id) ?? "", i + 1)));
+  }
+  function openSource(li) {
+    if (!li) return;
+    ansSrc.querySelectorAll("li.is-open").forEach((el) => el !== li && el.classList.remove("is-open"));
+    li.classList.add("is-open");
+    li.scrollIntoView({ block: "nearest", behavior: REDUCED ? "auto" : "smooth" });
+    const k = byId.get(Number(li.dataset.id));
+    if (k !== undefined) scene?.impulse(k, 2, true);
+  }
+  /** "Not in my sources", with the passages that came closest and the contact link. */
+  function showAbstention(hits, signal) {
+    clearDraft();
+    ansText.textContent = t().notInSources;
+    ansText.after(contactNote());
+    if (hits.length) sourceList(hits, signal, t().related);
+  }
+  function showDecline() {
+    clearDraft();
+    ansText.textContent = t().declined;
+    ansText.after(contactNote());
   }
 
   /**
@@ -210,6 +290,8 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
     teleAnchor = scene ? [scene.hubPoint(1)] : [];
     teleLine(t().query(words(question).length, question.length));
     let hits = [], ks = [], blocked = null, failure = null, retrieveMs = null;
+    let drafting = false, outcome = null, usage = null;
+    const claims = [];
     try {
       let first = true;
       for await (const ev of gated(question, signal)) {
@@ -230,6 +312,16 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
           else teleLine(t().noHits, "warn");
           ks = hits.map((h) => byId.get(h.id)).filter((k) => k !== undefined);   // the hits with a brain point
           if (scene && ks.length) teleAnchor = ks;
+        } else if (ev.kind === "token") {
+          // the draft opens the panel at once, marked as being checked (zorzo-api LLD "Front against the API")
+          if (!drafting) { drafting = true; clearFlights(); startPanel(question); startDraft(); }
+          ansText.append(ev.text);
+        } else if (ev.kind === "claim") {
+          claims.push(ev);
+        } else if (ev.kind === "usage") {
+          usage = ev;
+        } else if (ev.kind === "done") {
+          outcome = ev.outcome;
         }
       }
     } catch (err) {
@@ -244,19 +336,29 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
       return;
     }
     teleLine(t().latency((performance.now() - t0).toFixed(0)));
-    teleLine(t().cost, "dim");
+    teleLine(usage ? t().costOf(usage.cost_usd) : t().cost, "dim");
+    const render = () => {
+      clearDraft();   // a draft left by a stream that broke is never shown as an answer
+      if (failure) showFailure(failure);
+      else if (blocked) showBlocked();
+      else if (claims.length) showClaims(claims, hits);
+      else if (outcome === "abstained") showAbstention(hits, signal);
+      else if (outcome === "declined") showDecline();
+      else if (!hits.length) showNoSources();
+      else showPassages(hits, signal);
+    };
+    // the answer is on screen first; a brain effect that throws then ends the brain, not the answer
+    const holdBrain = (impulse) => {
+      if (!scene || !ks.length) return;
+      try { scene.hold(ks); if (impulse) scene.impulse(ks[0], 2, true); } catch (err) { console.error(err); scene.fail(); }
+    };
+    if (drafting) { render(); holdBrain(false); return; }   // the panel is open: the answer replaces the draft
     // the answer opens once the tokens land, so the brain lights up first
     flyTokens(question, ks, named, Boolean(blocked), () => {
       if (signal.aborted) return;
       startPanel(question);
-      if (failure) showFailure(failure);
-      else if (blocked) showBlocked();
-      else if (!hits.length) showNoSources();
-      else showPassages(hits, signal);
-      // the answer is on screen first; a brain effect that throws then ends the brain, not the answer
-      if (scene && ks.length) {
-        try { scene.hold(ks); scene.impulse(ks[0], 2, true); } catch (err) { console.error(err); scene.fail(); }
-      }
+      render();
+      holdBrain(true);
     });
   }
   function submit(question) { $("q").value = question; run(question); }

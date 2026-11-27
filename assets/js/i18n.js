@@ -36,6 +36,11 @@ const T = {
     tryAgainIn: (s) => `Muitas perguntas seguidas. Você pode perguntar de novo ${s == null ? "daqui a pouco" : `em ${wait(s, "pt")}`}.`,
     offline: "O backend está fora do ar. A caixa volta sozinha quando ele voltar.",
     degradedNotice: "Modo só busca: as respostas mostram os trechos das fontes, sem texto escrito por IA.",
+    checking: "conferindo nas fontes…", removed: "removido: as fontes não sustentam",
+    notInSources: "Não está nas minhas fontes: o material revisado não cobre esta pergunta.",
+    related: "Trechos mais próximos", contactLink: "Falar com o André",
+    declined: "Isso fica fora do que este site responde. Pergunte sobre a carreira do André, os projetos dele ou como o site foi feito.",
+    cite: (n) => `fonte ${n}`, costOf: (usd) => `custo · US$${usd.toFixed(4)}`,
   },
   en: {
     typed: "building intelligent systems", role: "Senior backend engineer · Applied AI",
@@ -63,6 +68,11 @@ const T = {
     tryAgainIn: (s) => `Too many questions in a row. You can ask again ${s == null ? "shortly" : `in ${wait(s, "en")}`}.`,
     offline: "The backend is unreachable. The box comes back by itself when it returns.",
     degradedNotice: "Search-only mode: answers show the source passages, with no AI-written text.",
+    checking: "checking against sources…", removed: "removed: not supported by the sources",
+    notInSources: "Not in my sources: the reviewed material doesn't cover this question.",
+    related: "Closest passages", contactLink: "Contact André",
+    declined: "That's outside what this site answers. Ask about André's career, his projects or how the site was built.",
+    cite: (n) => `source ${n}`, costOf: (usd) => `cost · US$${usd.toFixed(4)}`,
   },
 };
 

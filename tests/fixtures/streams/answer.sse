@@ -1,0 +1,158 @@
+event: stage
+data: {"name":"route","status":"start","ms":null}
+
+event: stage
+data: {"name":"route","status":"end","ms":410}
+
+event: model
+data: {"stage":"route","model":"nvidia/nemotron-3.5-super-vl:free","provider":"openrouter","fallback_reason":null}
+
+event: stage
+data: {"name":"retrieve","status":"start","ms":null}
+
+event: stage
+data: {"name":"retrieve","status":"end","ms":12}
+
+event: stage
+data: {"name":"rerank","status":"start","ms":null}
+
+event: stage
+data: {"name":"rerank","status":"end","ms":840}
+
+event: retrieval
+data: {"hits":[{"id":2,"title":"FAQ","score":0.0328},{"id":1,"title":"FAQ","score":0.0161},{"id":3,"title":"FAQ","score":0.0159},{"id":5,"title":"Narrativa de carreira","score":0.0154}],"corpus_version":1}
+
+event: stage
+data: {"name":"assess","status":"start","ms":null}
+
+event: stage
+data: {"name":"assess","status":"end","ms":380}
+
+event: model
+data: {"stage":"assess","model":"nvidia/nemotron-3.5-super-vl:free","provider":"openrouter","fallback_reason":null}
+
+event: stage
+data: {"name":"answer","status":"start","ms":null}
+
+event: token
+data: {"text":"On"}
+
+event: token
+data: {"text":" AWS,"}
+
+event: token
+data: {"text":" André"}
+
+event: token
+data: {"text":" has"}
+
+event: token
+data: {"text":" used"}
+
+event: token
+data: {"text":" Lambda,"}
+
+event: token
+data: {"text":" API"}
+
+event: token
+data: {"text":" Gateway,"}
+
+event: token
+data: {"text":" DynamoDB,"}
+
+event: token
+data: {"text":" Kinesis,"}
+
+event: token
+data: {"text":" SQS"}
+
+event: token
+data: {"text":" and"}
+
+event: token
+data: {"text":" S3."}
+
+event: token
+data: {"text":" He"}
+
+event: token
+data: {"text":" built"}
+
+event: token
+data: {"text":" serverless"}
+
+event: token
+data: {"text":" pipelines"}
+
+event: token
+data: {"text":" that"}
+
+event: token
+data: {"text":" process"}
+
+event: token
+data: {"text":" millions"}
+
+event: token
+data: {"text":" of"}
+
+event: token
+data: {"text":" events"}
+
+event: token
+data: {"text":" per"}
+
+event: token
+data: {"text":" day."}
+
+event: token
+data: {"text":" He"}
+
+event: token
+data: {"text":" holds"}
+
+event: token
+data: {"text":" every"}
+
+event: token
+data: {"text":" AWS"}
+
+event: token
+data: {"text":" certification."}
+
+event: model
+data: {"stage":"answer","model":"google/gemma-4-31b-it:free","provider":"openrouter","fallback_reason":null}
+
+event: stage
+data: {"name":"answer","status":"end","ms":3120}
+
+event: stage
+data: {"name":"verify","status":"start","ms":null}
+
+event: stage
+data: {"name":"verify","status":"end","ms":1450}
+
+event: model
+data: {"stage":"verify","model":"nvidia/nemotron-3.5-super-vl:free","provider":"openrouter","fallback_reason":null}
+
+: ping
+
+event: claim
+data: {"i":0,"text":"On AWS, André has used Lambda, API Gateway, DynamoDB, Kinesis, SQS and S3.","sources":[2],"verdict":"supported"}
+
+event: claim
+data: {"i":1,"text":"He built pipelines that process millions of events per day.","sources":[2,1],"verdict":"partial"}
+
+event: claim
+data: {"i":2,"text":"He holds every AWS certification.","sources":[6],"verdict":"unsupported"}
+
+event: claim
+data: {"i":3,"text":"His certifications are not in my sources.","sources":[],"verdict":"gap"}
+
+event: usage
+data: {"tokens_in":2140,"tokens_out":186,"cost_usd":0.0,"latency_ms":6420}
+
+event: done
+data: {"trace_id":"7a2f9c4e-1b3d-4e5f-8a6b-9c0d1e2f3a4b","outcome":"answered","cached":false,"suggestion":null}
+

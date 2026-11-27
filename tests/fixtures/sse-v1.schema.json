@@ -59,7 +59,7 @@
           "type": "string"
         },
         "sources": {
-          "description": "Chunk ids",
+          "description": "Chunk ids; empty for the `gap` sentence",
           "items": {
             "type": "integer"
           },
@@ -67,10 +67,12 @@
           "type": "array"
         },
         "verdict": {
+          "description": "`gap`: the sentence naming the part of the question the sources don't cover",
           "enum": [
             "supported",
             "partial",
-            "unsupported"
+            "unsupported",
+            "gap"
           ],
           "title": "Verdict",
           "type": "string"
@@ -157,12 +159,20 @@
           "title": "Trace Id",
           "type": "string"
         },
+        "outcome": {
+          "enum": [
+            "answered",
+            "abstained",
+            "declined",
+            "blocked",
+            "degraded",
+            "error"
+          ],
+          "title": "Outcome",
+          "type": "string"
+        },
         "cached": {
           "title": "Cached",
-          "type": "boolean"
-        },
-        "abstained": {
-          "title": "Abstained",
           "type": "boolean"
         },
         "suggestion": {
@@ -180,8 +190,8 @@
       },
       "required": [
         "trace_id",
+        "outcome",
         "cached",
-        "abstained",
         "suggestion"
       ],
       "title": "Done",
