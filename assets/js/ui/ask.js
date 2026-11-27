@@ -216,8 +216,8 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
    */
   function showClaims(claims, hits) {
     clearDraft();
-    const order = [];   // chunk ids in citation order
-    for (const c of claims) for (const id of c.sources) if (!order.includes(id)) order.push(id);
+    const order = [];   // chunk ids in citation order; a removed claim shows no citation, so it adds none
+    for (const c of claims) if (c.verdict !== "unsupported") for (const id of c.sources) if (!order.includes(id)) order.push(id);
     const items = new Map();
     for (const c of claims) {
       const span = document.createElement("span"); span.className = `claim ${c.verdict}`;
