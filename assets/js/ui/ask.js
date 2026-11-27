@@ -180,9 +180,12 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
     scene?.fire(k);
     return li;
   }
-  function sourceList(hits, signal, heading = t().sources(hits.length)) {
-    const head = document.createElement("h4"); head.textContent = heading;
+  function sourcesHeading(text) {
+    const head = document.createElement("h4"); head.textContent = text;
     ansSrc.append(head);
+  }
+  function sourceList(hits, signal, heading = t().sources(hits.length)) {
+    sourcesHeading(heading);
     const top = hits[0]?.score || 1;
     // passages appear one by one, each lighting its chunk
     hits.forEach((hit, n) => setTimeout(() => { if (!signal.aborted) sourceItem(hit.id, hit.title, n + 1, hit.score / top); }, n * 120));
@@ -196,14 +199,11 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
     p.className = "ans-note"; a.href = "#contact"; a.textContent = t().contactLink;
     p.append(a); return p;
   }
-  /** The draft, as it streams, marked as being checked; checked claims replace it. */
-  function showDraft(text) {
-    if (!ansText.classList.contains("draft")) {
-      ansText.className = "ans-text draft";
-      const mark = document.createElement("p"); mark.className = "ans-note ans-checking"; mark.textContent = t().checking;
-      ansText.after(mark);
-    }
-    ansText.textContent = text;
+  /** Opens the draft, marked as being checked; checked claims replace it. */
+  function startDraft() {
+    ansText.className = "ans-text draft";
+    const mark = document.createElement("p"); mark.className = "ans-note ans-checking"; mark.textContent = t().checking;
+    ansText.after(mark);
   }
   function clearDraft() {
     ans.querySelectorAll(".ans-checking").forEach((el) => el.remove());
@@ -237,8 +237,7 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
       ansText.append(span, " ");
     }
     if (!order.length) return;
-    const head = document.createElement("h4"); head.textContent = t().sources(order.length);
-    ansSrc.append(head);
+    sourcesHeading(t().sources(order.length));
     const titles = new Map(hits.map((h) => [h.id, h.title]));
     order.forEach((id, i) => items.set(id, sourceItem(id, titles.get(id) ?? "", i + 1)));
   }
@@ -291,7 +290,7 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
     teleAnchor = scene ? [scene.hubPoint(1)] : [];
     teleLine(t().query(words(question).length, question.length));
     let hits = [], ks = [], blocked = null, failure = null, retrieveMs = null;
-    let draft = "", drafting = false, done = null, usage = null;
+    let drafting = false, outcome = null, usage = null;
     const claims = [];
     try {
       let first = true;
@@ -315,14 +314,14 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
           if (scene && ks.length) teleAnchor = ks;
         } else if (ev.kind === "token") {
           // the draft opens the panel at once, marked as being checked (zorzo-api LLD "Front against the API")
-          if (!drafting) { drafting = true; clearFlights(); startPanel(question); }
-          draft += ev.text; showDraft(draft);
+          if (!drafting) { drafting = true; clearFlights(); startPanel(question); startDraft(); }
+          ansText.append(ev.text);
         } else if (ev.kind === "claim") {
           claims.push(ev);
         } else if (ev.kind === "usage") {
           usage = ev;
         } else if (ev.kind === "done") {
-          done = ev;
+          outcome = ev.outcome;
         }
       }
     } catch (err) {
@@ -338,7 +337,6 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
     }
     teleLine(t().latency((performance.now() - t0).toFixed(0)));
     teleLine(usage ? t().costOf(usage.cost_usd) : t().cost, "dim");
-    const outcome = done?.outcome;
     const render = () => {
       clearDraft();   // a draft left by a stream that broke is never shown as an answer
       if (failure) showFailure(failure);
@@ -349,22 +347,18 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
       else if (!hits.length) showNoSources();
       else showPassages(hits, signal);
     };
-    if (drafting) {   // the panel is open already: the checked answer replaces the draft in place
-      render();
-      if (scene && ks.length) {
-        try { scene.hold(ks); } catch (err) { console.error(err); scene.fail(); }
-      }
-      return;
-    }
+    // the answer is on screen first; a brain effect that throws then ends the brain, not the answer
+    const holdBrain = (impulse) => {
+      if (!scene || !ks.length) return;
+      try { scene.hold(ks); if (impulse) scene.impulse(ks[0], 2, true); } catch (err) { console.error(err); scene.fail(); }
+    };
+    if (drafting) { render(); holdBrain(false); return; }   // the panel is open: the answer replaces the draft
     // the answer opens once the tokens land, so the brain lights up first
     flyTokens(question, ks, named, Boolean(blocked), () => {
       if (signal.aborted) return;
       startPanel(question);
       render();
-      // the answer is on screen first; a brain effect that throws then ends the brain, not the answer
-      if (scene && ks.length) {
-        try { scene.hold(ks); scene.impulse(ks[0], 2, true); } catch (err) { console.error(err); scene.fail(); }
-      }
+      holdBrain(true);
     });
   }
   function submit(question) { $("q").value = question; run(question); }
