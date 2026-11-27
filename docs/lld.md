@@ -1,6 +1,6 @@
 # LLD — zorzo.dev.br (zorzo-site)
 
-2026-11-26 · André de Castro Zorzo · Status: draft
+2026-11-27 · André de Castro Zorzo · Status: draft
 
 Scope: how the static front is built and how it renders, including the 3D brain. What the system does, the
 API contract and how the front behaves against the API live in zorzo-api: `docs/lld.md`, section "8. Client",
@@ -102,6 +102,20 @@ LLD "Front against the API"; how this code does it:
 - A hit whose chunk isn't in the loaded corpus (a version activated after the page loaded) shows as a
   passage by the title the stream sends, with no text, link or brain point.
 
+**Answer panel.** What each event does is in zorzo-api's LLD, "Front against the API"; how it is drawn:
+
+- The first `token` opens the panel at once (no token flight), marked "checking against sources" in a note
+  under the text; each token is appended as plain text.
+- At the end of the stream the draft and its note are cleared, whatever the outcome, and the checked answer
+  is drawn in place: one span per claim, each with citation buttons numbered by first use across the claims
+  that stay; an `unsupported` claim is struck through with "removed: not supported by the sources" and no
+  citations, and adds no number; the `gap` claim is a plain note on its own line.
+- Under the claims, the cited sources only, in citation order; a citation opens its source's item (the
+  whole passage, its title and link from `corpus.json`), closing any other, and fires its brain point.
+- An abstention shows "not in my sources", the contact link and the closest passages; a decline, its
+  message and the contact link.
+- Every text from the stream goes into the page as text nodes (`textContent`, `append`), never as HTML.
+
 **Example questions.** A list under the question box, in the interface language, hidden while an answer is
 open; clicking one asks it. While offline every example list is hidden, the answer panel's too. The box, the
 intro and the hub links sit above the list by its measured height (`--ex`), which stays reserved while an
@@ -180,8 +194,9 @@ Situation: existing.
   `/api/` requests by interception: health as each test needs it, Turnstile's script by a stub that hands out a
   new token after each reset (`fixtures.ts`), and the question with a stream from
   `tests/fixtures/streams/`. Those are recorded from the real API in search-only mode over the same database
-  (`tools/record_streams.py`), byte for byte, so the hit ids match the fixture corpus; only `error.sse` is
-  written by hand, since the API sends `error` only on a bug. Every event of every stream validates against
+  (`tools/record_streams.py`), byte for byte, so the hit ids match the fixture corpus; `error.sse` is
+  written by hand, since the API sends `error` only on a bug, and so are `answer.sse`, `abstained.sse` and
+  `declined.sse`, which need models, with ids from the same fixture corpus. Every event of every stream validates against
   the copy of zorzo-api's `contracts/sse-v1.schema.json` next to them (`streams.spec.ts`, with Ajv).
 
 ## 6. Assets and licenses
