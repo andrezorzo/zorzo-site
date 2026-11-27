@@ -7,7 +7,9 @@ comments included, and the SSE schema is copied next to the streams so the tests
   python3 tools/record_streams.py [API_URL] [ZORZO_API_DIR]
 
 The defaults are http://127.0.0.1:8000 and ../zorzo-api. The error stream (streams/error.sse) is written by
-hand, because the API emits `error` only on a bug; the tests validate it like the recorded ones.
+hand, because the API emits `error` only on a bug, and so are the answer, abstention and decline streams
+(answer.sse, abstained.sse, declined.sse), which need models; the tests validate them like the recorded ones.
+The recorded ones come from an API whose models can't answer (no key), so they are search-only.
 """
 import json, shutil, sys, urllib.request
 from pathlib import Path

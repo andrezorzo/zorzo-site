@@ -1,0 +1,15 @@
+event: stage
+data: {"name":"route","status":"start","ms":null}
+
+event: stage
+data: {"name":"route","status":"end","ms":390}
+
+event: model
+data: {"stage":"route","model":"nvidia/nemotron-3.5-super-vl:free","provider":"openrouter","fallback_reason":null}
+
+event: usage
+data: {"tokens_in":310,"tokens_out":40,"cost_usd":0.0,"latency_ms":520}
+
+event: done
+data: {"trace_id":"5e6f7a8b-9c0d-4e1f-a2b3-c4d5e6f7a8b9","outcome":"declined","cached":false,"suggestion":null}
+

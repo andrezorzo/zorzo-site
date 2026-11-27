@@ -26,7 +26,7 @@ test("every recorded stream validates against the SSE schema", () => {
   ajv.addKeyword("discriminator");   // Pydantic's OpenAPI hint (with `mapping`, which Ajv can't use); `oneOf` validates
   const validate = ajv.compile(schema);
   const files = readdirSync(path.join(FIXTURES, "streams")).filter((f) => f.endsWith(".sse"));
-  expect(files.sort()).toEqual(["error.sse", "no-passages.sse", "passages.sse"]);
+  expect(files.sort()).toEqual(["abstained.sse", "answer.sse", "declined.sse", "error.sse", "no-passages.sse", "passages.sse"]);
   for (const file of files) {
     const all = events(readFileSync(path.join(FIXTURES, "streams", file), "utf8"));
     expect(all.length, file).toBeGreaterThan(0);

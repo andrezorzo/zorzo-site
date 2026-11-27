@@ -1,0 +1,69 @@
+event: stage
+data: {"name":"route","status":"start","ms":null}
+
+event: stage
+data: {"name":"route","status":"end","ms":410}
+
+event: model
+data: {"stage":"route","model":"nvidia/nemotron-3.5-super-vl:free","provider":"openrouter","fallback_reason":null}
+
+event: stage
+data: {"name":"retrieve","status":"start","ms":null}
+
+event: stage
+data: {"name":"retrieve","status":"end","ms":12}
+
+event: stage
+data: {"name":"rerank","status":"start","ms":null}
+
+event: stage
+data: {"name":"rerank","status":"end","ms":840}
+
+event: retrieval
+data: {"hits":[{"id":2,"title":"FAQ","score":0.0328},{"id":1,"title":"FAQ","score":0.0161},{"id":3,"title":"FAQ","score":0.0159},{"id":5,"title":"Narrativa de carreira","score":0.0154}],"corpus_version":1}
+
+event: stage
+data: {"name":"assess","status":"start","ms":null}
+
+event: stage
+data: {"name":"assess","status":"end","ms":380}
+
+event: model
+data: {"stage":"assess","model":"nvidia/nemotron-3.5-super-vl:free","provider":"openrouter","fallback_reason":null}
+
+event: stage
+data: {"name":"answer","status":"start","ms":null}
+
+event: token
+data: {"text":"André"}
+
+event: token
+data: {"text":" has"}
+
+event: token
+data: {"text":" worked"}
+
+event: token
+data: {"text":" with"}
+
+event: token
+data: {"text":" AWS"}
+
+event: model
+data: {"stage":"answer","model":"google/gemma-4-31b-it:free","provider":"openrouter","fallback_reason":null}
+
+event: stage
+data: {"name":"answer","status":"end","ms":2050}
+
+event: stage
+data: {"name":"verify","status":"start","ms":null}
+
+event: stage
+data: {"name":"verify","status":"end","ms":1210}
+
+event: usage
+data: {"tokens_in":1830,"tokens_out":60,"cost_usd":0.0,"latency_ms":4980}
+
+event: done
+data: {"trace_id":"0b1c2d3e-4f5a-4b6c-8d7e-9f0a1b2c3d4e","outcome":"abstained","cached":false,"suggestion":null}
+

@@ -147,6 +147,15 @@ html { scroll-behavior: smooth; }
 .ans-text { margin: calc(12 * var(--px)) 0 0; font-size: calc(14 * var(--px)); color: #E4F2F3; }
 .ans-text.warn { color: var(--amber); }
 .ans-note { margin: calc(10 * var(--px)) 0 0; font-size: calc(11 * var(--px)); color: var(--lilac-dim); }
+.ans-text.draft { color: #9FB6B8; }
+.ans-checking { color: var(--amber); }
+.claim.unsupported s { color: var(--lilac-dim); text-decoration-thickness: 1px; }
+.claim-why { font-size: .8em; color: var(--lilac-dim); }
+.claim.gap { display: block; margin-top: calc(8 * var(--px)); font-size: .9em; color: var(--lilac); }
+.cite { padding: 0 1px; border: 0; background: none; font: inherit; font-size: .8em; color: var(--amber); cursor: pointer; vertical-align: super; line-height: 1; }
+.cite:hover, .cite:focus-visible { color: var(--mint-hi); }
+.ans-sources li.is-open .src { border-color: rgba(245, 213, 138, .45); }
+.ans-sources li.is-open .src-text { display: block; -webkit-line-clamp: unset; overflow: visible; }
 .ans-sources { list-style: none; margin: calc(12 * var(--px)) 0 0; padding: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(192,192,224,.26) transparent; }
 .ans-sources h4 { margin: 0 0 6px; font-weight: 400; font-size: calc(11 * var(--px)); color: var(--lilac); letter-spacing: .04em; }
 .ans-sources li + li { margin-top: 6px; }

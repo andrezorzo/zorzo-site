@@ -17,5 +17,5 @@ event: retrieval
 data: {"hits":[],"corpus_version":1}
 
 event: done
-data: {"trace_id":"d53cf716-6f61-4977-b0b5-2c2db1ed0c22","cached":false,"abstained":false,"suggestion":null}
+data: {"trace_id":"d53cf716-6f61-4977-b0b5-2c2db1ed0c22","outcome":"degraded","cached":false,"suggestion":null}
 
