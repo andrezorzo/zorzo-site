@@ -152,6 +152,7 @@ html { scroll-behavior: smooth; }
 .ans-note { margin: calc(10 * var(--px)) 0 0; font-size: calc(11 * var(--px)); color: var(--lilac-dim); }
 .ans-text.draft { color: #9FB6B8; }
 .ans-checking { color: var(--amber); }
+.ans-reused { color: var(--mint); }   /* an answer served from the cache */
 .claim.unsupported s { color: var(--lilac-dim); text-decoration-thickness: 1px; }
 .claim-why { font-size: .8em; color: var(--lilac-dim); }
 .claim.gap { display: block; margin-top: calc(8 * var(--px)); font-size: .9em; color: var(--lilac); }

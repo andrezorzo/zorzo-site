@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://zorzo.dev.br/contracts/sse-v1.schema.json",
   "title": "zorzo.dev.br stream events, v1",
-  "description": "SSE frames `event: <name>` and `data: <JSON>`; `: ping` comments keep the connection alive. Ordering: `done` is always last, sent exactly once unless the connection drops; `blocked` and `error` are followed only by `done` (an output check's `blocked` may come after `token`s); `degraded` is followed only by its `retrieval` hits, then `done`; every `token` comes before the first `claim`; a cached answer sends `stage`, the cached `claim` events, `usage` with cost 0 and `done {cached: true}`, with no `token`. v1 freezes at launch.",
+  "description": "SSE frames `event: <name>` and `data: <JSON>`; `: ping` comments keep the connection alive. Ordering: `done` is always last, sent exactly once unless the connection drops; `blocked` and `error` are followed only by `done` (an output check's `blocked` may come after `token`s); `degraded` is followed only by its `retrieval` hits, then `done`; every `token` comes before the first `claim`; a cached answer sends `stage`, the cached `claim` events, `usage` and `done {cached: true}`, with no `token` and no `model` event besides `route`'s. v1 freezes at launch.",
   "$defs": {
     "Blocked": {
       "additionalProperties": false,

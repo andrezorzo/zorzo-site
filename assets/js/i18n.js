@@ -25,6 +25,7 @@ const T = {
     retrieve: (h, c, ms) => `retrieve · ${h} de ${c} trechos${ms === null ? "" : ` · ${ms} ms`}`,
     relevance: (top, cut) => `relevância · ${top} no topo · corte em ${cut}`,
     noHits: "nenhum trecho", searchOnly: "modo · só busca, sem modelo",
+    reused: "reaproveitou uma resposta verificada para a mesma pergunta", reusedLabel: "Resposta reaproveitada: já verificada nas fontes para a mesma pergunta.",
     latency: (ms) => `latência · ${ms} ms`, cost: "custo · US$0",
     blockedBy: (layer, category) => `Bloqueado na camada ${layer}: ${{
       injection: "a pergunta parece uma tentativa de mudar as regras do agente.",
@@ -66,6 +67,7 @@ const T = {
     retrieve: (h, c, ms) => `retrieve · ${h} of ${c} chunks${ms === null ? "" : ` · ${ms} ms`}`,
     relevance: (top, cut) => `relevance · ${top} at top · cut at ${cut}`,
     noHits: "no chunks", searchOnly: "mode · search only, no model",
+    reused: "reused a verified answer to the same question", reusedLabel: "Reused answer: already checked against the sources for the same question.",
     latency: (ms) => `latency · ${ms} ms`, cost: "cost · US$0",
     blockedBy: (layer, category) => `Blocked at layer ${layer}: ${{
       injection: "the question looks like an attempt to change the agent's rules.",

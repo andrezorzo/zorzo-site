@@ -116,6 +116,10 @@ LLD "Front against the API"; how this code does it:
   citations, and adds no number; the `gap` claim is a plain note on its own line.
 - Under the claims, the cited sources only, in citation order; a citation opens its source's item (the
   whole passage, its title and link from `corpus.json`), closing any other, and fires its brain point.
+- A reused answer (`done.cached`) is the same claims with a "reused answer" note under the text, and the steps
+  list adds "reused a verified answer to the same question" (the `cache` stage prints like any stage). Its
+  stream has no `retrieval`, so a citation's passage and title come from `corpus.json` by chunk id; a chunk
+  the page's corpus doesn't have shows by the title in the stream, which a cached stream doesn't carry.
 - An abstention shows "not in my sources", the contact link and the closest passages; a decline, its
   message and the contact link. `done.notice: no_context` replaces the abstention with its message and the
   example questions; `done.notice: other_language` adds its line as a note right above the answer text.
