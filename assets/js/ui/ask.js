@@ -233,7 +233,7 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
     const p = document.createElement("p"), b = document.createElement("button");
     p.className = "ans-note ans-suggestion"; p.textContent = `${t().tryExamples} `;
     b.type = "button"; b.className = "ans-suggest"; b.textContent = example.text;
-    b.addEventListener("click", () => submit(example.text));
+    b.addEventListener("click", () => { if (health.state !== "offline") submit(example.text); });   // hidden when offline; never asks then
     p.append(b); return p;
   }
   /** Opens the draft, marked as being checked; checked claims replace it. */
@@ -387,7 +387,7 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
       else if (claims.length) showClaims(claims, hits);
       else if (outcome === "abstained") showAbstention(hits, signal, suggestionNote(done?.suggestion));
       else if (outcome === "declined") showDecline(suggestionNote(done?.suggestion));
-      else if (outcome === "answered") ansText.textContent = t().contactReply;   // the `contact` intent: the links follow
+      else if (outcome === "answered" && !drafting) ansText.textContent = t().contactReply;   // the `contact` intent sends no token: the links follow
       else if (!hits.length) showNoSources();
       else showPassages(hits, signal);
       // the contact options follow every reply, a block and a failure excepted

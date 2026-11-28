@@ -90,7 +90,7 @@ html { scroll-behavior: smooth; }
 .turnstile { position: absolute; width: 0; height: 0; overflow: hidden; }
 .ask-examples { margin: 0; }
 .ask-examples button { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.has-answer .ask-examples, .stage.offline .ans-examples { visibility: hidden; }
+.has-answer .ask-examples, .stage.offline .ans-examples, .stage.offline .ans-suggestion { visibility: hidden; }
 /* the free-tier notice: always under the box, so it is read before a question is sent */
 .ask-privacy { margin: 0 0 8px; color: var(--muted); font-size: 12px; line-height: 1.4; }
 /* narrower than 17:20, or under 520 px tall, the notice is smaller and the list shows three examples, so the box doesn't
