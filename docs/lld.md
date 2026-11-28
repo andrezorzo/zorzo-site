@@ -1,6 +1,6 @@
 # LLD — zorzo.dev.br (zorzo-site)
 
-2026-11-27 · André de Castro Zorzo · Status: draft
+2026-11-28 · André de Castro Zorzo · Status: draft
 
 Scope: how the static front is built and how it renders, including the 3D brain. What the system does, the
 API contract and how the front behaves against the API live in zorzo-api: `docs/lld.md`, section "8. Client",
@@ -91,7 +91,11 @@ LLD "Front against the API"; how this code does it:
   `demo-data/`); the production site key comes with the deploy, and until then production has no token and the
   gate refuses every question.
 - The conversation id is a UUID from `crypto.randomUUID()`, created on the first question and kept in
-  `sessionStorage` under `conversation`; with storage blocked, one id per page view.
+  `sessionStorage` under `conversation`, with the time of the last question sent under `conversation-asked`;
+  with storage blocked or full, both live for the page view. Each question first compares that time with
+  `SESSION_TTL` (a constant in `data/api.js`): past it, the question goes with a new id, and the panel opens
+  with the "new conversation" notice above the answer. The "new conversation" button in the panel's header
+  makes a new id, stops the question in flight, and clears and closes the panel, with no notice.
 - Health is checked on load; while offline, again every `HEALTH_POLL_INTERVAL` and when the tab
   regains focus or becomes visible. There is no polling while online.
 - A question's outcome is fresher than a health check already in flight. A question that finds the API
@@ -113,7 +117,8 @@ LLD "Front against the API"; how this code does it:
 - Under the claims, the cited sources only, in citation order; a citation opens its source's item (the
   whole passage, its title and link from `corpus.json`), closing any other, and fires its brain point.
 - An abstention shows "not in my sources", the contact link and the closest passages; a decline, its
-  message and the contact link.
+  message and the contact link. `done.notice: no_context` replaces the abstention with its message and the
+  example questions; `done.notice: other_language` adds its line as a note right above the answer text.
 - Every text from the stream goes into the page as text nodes (`textContent`, `append`), never as HTML.
 
 **Example questions.** A list under the question box, in the interface language, hidden while an answer is

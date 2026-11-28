@@ -1,8 +1,10 @@
-// The API client (zorzo-api LLD "Front against the API"): health, the conversation id, and the question as a
-// stream. Same origin as the page (ADR 0003, CloudFront in production, tools/serve.py locally), so the paths
+// The API client (zorzo-api LLD "Front against the API"): health, the conversation id and its idle reset, and
+// the question as a stream. Same origin as the page (ADR 0003, CloudFront in production, tools/serve.py locally), so the paths
 // are relative. Each stream event becomes {kind, ...data}, the shape the interface reads.
 
 const SESSION_KEY = "conversation";
+const ASKED_KEY = "conversation-asked";   // when the conversation's last question was sent (ms since the epoch)
+const SESSION_TTL = 30 * 60 * 1000;       // SESSION_TTL (LLD "Values and configuration"): idle this long, it starts over
 // 503 from the API; 502 and 504 from CloudFront or Caddy when the API doesn't answer (LLD "Front against the API")
 const OFFLINE_STATUS = new Set([502, 503, 504]);
 const HEALTH_TIMEOUT = 10_000;   // a check that hangs counts as offline, so the next one can run
@@ -19,16 +21,39 @@ export class AskError extends Error {
 }
 const GATE_STATUS = { 422: "invalid", 403: "bot", 429: "limited" };   // the gate's refusals (LLD "Errors")
 
-let memoryId = null;   // when session storage is blocked: one id for this page view
+// When session storage is blocked or full: the conversation lives for this page view.
+const memory = new Map();
+function load(key) {
+  if (memory.has(key)) return memory.get(key);
+  try { return sessionStorage.getItem(key); } catch { return null; }
+}
+function store(key, value) {
+  try { sessionStorage.setItem(key, value); } catch { memory.set(key, value); }
+}
+
 /** The conversation id: a UUID created on the first question, kept in the tab's session storage. */
 export function sessionId() {
-  try {
-    let id = sessionStorage.getItem(SESSION_KEY);
-    if (!id) { id = crypto.randomUUID(); sessionStorage.setItem(SESSION_KEY, id); }
-    return id;
-  } catch {
-    return (memoryId ??= crypto.randomUUID());
-  }
+  let id = load(SESSION_KEY);
+  if (!id) { id = crypto.randomUUID(); store(SESSION_KEY, id); }
+  return id;
+}
+
+/** A new conversation: a new id, and no question asked in it yet. */
+export function newConversation() {
+  store(SESSION_KEY, crypto.randomUUID());
+  store(ASKED_KEY, "");
+}
+
+/**
+ * Marks a question as sent in the conversation. After `SESSION_TTL` with no question, the conversation starts
+ * over first (a new id); returns whether it did, so the page can say so.
+ */
+export function questionSent() {
+  const now = Date.now(), last = Number(load(ASKED_KEY) || Number.NaN);
+  const idle = Number.isFinite(last) && now - last > SESSION_TTL;
+  if (idle) newConversation();
+  store(ASKED_KEY, String(now));
+  return idle;
 }
 
 /** "online", "degraded" (search-only mode) or "offline". Never throws. */

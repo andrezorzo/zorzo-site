@@ -47,7 +47,7 @@ test("keeps the conversation id across a reload", async ({ page }) => {
   await askQuestion(page, "Which cloud services does he use?");
   await expect(page.locator("#ansSources .src")).toHaveCount(6);
   expect(sessions[0]).toMatch(UUID);
-  expect(await page.evaluate(() => Object.values(sessionStorage))).toEqual([sessions[0]]);
+  expect(await page.evaluate(() => sessionStorage.getItem("conversation"))).toBe(sessions[0]);
   await page.reload();
   await expect(page.locator("#stage")).toHaveClass(/ready/);
   await askQuestion(page, "Has he led a migration?");

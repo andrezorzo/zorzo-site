@@ -3,7 +3,7 @@
 // "Stream events"); the brain, when there is one, only reacts to them. Without the brain everything here works
 // the same, minus the effects (F01 PRD, story S11).
 
-import { AskError } from "../data/api.js";
+import { AskError, newConversation, questionSent } from "../data/api.js";
 import { currentLang, onLang, t } from "../i18n.js";
 import { namedIn, term, words } from "../text.js";
 import { $, REDUCED } from "../util.js";
@@ -122,12 +122,21 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
     citeLine.setAttribute("points", `${x0},${y0} ${x0 + (x - x0) * 0.35},${y0} ${x},${y}`);
     citeDot.setAttribute("cx", x); citeDot.setAttribute("cy", y);
   }
-  function startPanel(question) {
+  function clearPanel() {
     ans.querySelectorAll(".ans-note, .ans-examples, .ans-contact, .ans-suggestion").forEach((el) => el.remove());   // left by a previous answer
-    $("ansQ").textContent = question;
     ansText.replaceChildren(); ansSrc.replaceChildren();
     ansText.className = "ans-text";
+  }
+  /** Opens the panel for a question; `renewed`: the idle limit started a new conversation, which it says. */
+  function startPanel(question, renewed) {
+    clearPanel();
+    $("ansQ").textContent = question;
+    if (renewed) ansText.before(noteLine("ans-new", t().newConversationNotice));
     openAnswer(true);
+  }
+  function noteLine(cls, text) {
+    const p = document.createElement("p"); p.className = `ans-note ${cls}`; p.textContent = text;
+    return p;
   }
   /**
    * A block: the layer and the reason in the interface language, the public defenses page, and "this was a
@@ -153,8 +162,9 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
     note.className = "ans-note"; link.href = `/dash/t/${encodeURIComponent(traceId)}`; link.textContent = t().trace;
     note.append(link); ansText.after(note);
   }
-  function showNoSources() {
-    ansText.textContent = t().noSources;
+  /** A reply with no answer to show, and the example questions to try instead. */
+  function showWithExamples(text) {
+    ansText.textContent = text;
     if (!examplesInLang().length) return;
     const hint = document.createElement("p"); hint.className = "ans-note"; hint.textContent = t().tryExamples;
     const list = document.createElement("ul"); list.className = "ans-examples";
@@ -330,6 +340,7 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
     teleLine(t().query(words(question).length, question.length));
     let hits = [], ks = [], blocked = null, failure = null, retrieveMs = null;
     let drafting = false, outcome = null, usage = null, guardAction = null, done = null;
+    const renewed = questionSent();   // idle past SESSION_TTL: this question starts a new conversation
     const claims = [];
     try {
       let first = true;
@@ -357,7 +368,7 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
           if (scene && ks.length) teleAnchor = ks;
         } else if (ev.kind === "token") {
           // the draft opens the panel at once, marked as being checked (zorzo-api LLD "Front against the API")
-          if (!drafting) { drafting = true; clearFlights(); startPanel(question); startDraft(); }
+          if (!drafting) { drafting = true; clearFlights(); startPanel(question, renewed); startDraft(); }
           ansText.append(ev.text);
         } else if (ev.kind === "claim") {
           claims.push(ev);
@@ -385,14 +396,17 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
       if (failure) showFailure(failure);
       else if (blocked) showBlocked(blocked);
       else if (claims.length) showClaims(claims, hits);
+      else if (done?.notice === "no_context") { clearDraft(); showWithExamples(t().noContext); }   // instead of "not in my sources"
       else if (outcome === "abstained") showAbstention(hits, signal, suggestionNote(done?.suggestion));
       else if (outcome === "declined") showDecline(suggestionNote(done?.suggestion));
       else if (outcome === "answered" && !drafting) ansText.textContent = t().contactReply;   // the `contact` intent sends no token: the links follow
       else if (outcome === "answered") ansText.textContent = t().error;   // a draft with no checked claim: not search-only
-      else if (!hits.length) showNoSources();
+      else if (!hits.length) showWithExamples(t().noSources);
       else showPassages(hits, signal);
       // the contact options follow every reply, a block and a failure excepted
       if (!failure && !blocked) ansSrc.after(contactLinks(done?.contact));
+      // answered in the domain's first language: one line above the answer names the languages the site answers in
+      if (!failure && !blocked && done?.notice === "other_language") ansText.before(noteLine("ans-language", t().otherLanguage));
     };
     // the answer is on screen first; a brain effect that throws then ends the brain, not the answer
     const holdBrain = (impulse) => {
@@ -403,7 +417,7 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
     // the answer opens once the tokens land, so the brain lights up first
     flyTokens(question, ks, named, Boolean(blocked), () => {
       if (signal.aborted) return;
-      startPanel(question);
+      startPanel(question, renewed);
       render();
       holdBrain(true);
     });
@@ -418,6 +432,8 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
   function stop() { reset(); hideTele(); }
   $("teleClose").addEventListener("click", stop);
   $("ansClose").addEventListener("click", () => { stop(); openAnswer(false); });
+  // a new conversation: a new id for the next question, and the panel cleared
+  $("ansNew").addEventListener("click", () => { stop(); newConversation(); clearPanel(); openAnswer(false); });
 
   /* ---- example questions of the interface language: the list under the box and the rotating placeholder */
   const examplesInLang = () => published.examples.filter((e) => e.lang === currentLang());
@@ -451,6 +467,7 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
   onLang(() => {
     $("qLabel").textContent = t().askLabel;
     $("askGo").title = t().send; $("ansClose").title = t().close; $("teleClose").title = t().close;
+    $("ansNew").textContent = t().newConversation;
     $("teleTitle").textContent = t().tele;
     rotatePlaceholder();
     fillExamples(exList);

@@ -11,9 +11,10 @@ export const corpus = JSON.parse(readFileSync(path.join(folder, "corpus.json"), 
 export const examples: { id: string; lang: string; text: string }[] = JSON.parse(readFileSync(path.join(folder, "examples.json"), "utf8"));
 
 // The API's streams recorded over the same fixture database (tools/record_streams.py), validated against the
-// SSE schema by streams.spec.ts; the answer, abstention, decline and error streams are written by hand. The page only ever gets one of these files, or a part of one.
+// SSE schema by streams.spec.ts; the answer, abstention, decline, error, no-context and other-language streams
+// are written by hand. The page only ever gets one of these files, or a part of one.
 const STREAMS = path.join(__dirname, "..", "fixtures", "streams");
-export const stream = (name: "passages" | "no-passages" | "error" | "answer" | "abstained" | "declined" | "blocked" | "blocked-output" | "contact") => readFileSync(path.join(STREAMS, `${name}.sse`), "utf8");
+export const stream = (name: "passages" | "no-passages" | "error" | "answer" | "abstained" | "declined" | "blocked" | "blocked-output" | "contact" | "no-context" | "other-language") => readFileSync(path.join(STREAMS, `${name}.sse`), "utf8");
 export const isAsk = (url: URL) => url.pathname === "/api/v1/ask";
 export const isAskRequest = (r: Request) => isAsk(new URL(r.url()));
 export const isHealth = (url: URL) => url.pathname === "/api/healthz";
