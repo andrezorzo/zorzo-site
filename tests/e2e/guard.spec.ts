@@ -96,7 +96,8 @@ test("a suggestion is hidden and inert once the API goes offline", async ({ page
   await expect(page.locator("#answer .ans-suggest")).toBeHidden();
   const requests: string[] = [];
   page.on("request", (r) => { if (isAskRequest(r)) requests.push(r.url()); });
-  await page.locator("#answer .ans-suggest").click({ force: true });
+  // a hidden button takes no mouse click, so the handler itself is fired: it must send nothing
+  await page.locator("#answer .ans-suggest").dispatchEvent("click");
   await page.waitForTimeout(300);
   expect(requests).toEqual([]);
 });
@@ -111,7 +112,7 @@ test("an answered outcome with no claims after a draft is not the contact reply"
   await page.goto("/");
   await expect(page.locator("#stage")).toHaveClass(/ready/);
   await askQuestion(page, "Which AWS services has he used?");
-  await expect(page.locator("#ansSources")).toBeAttached();
+  await expect(page.locator("#ansText")).toHaveText(/Something went wrong|Algo deu errado/);
+  await expect(page.locator("#ansText")).not.toContainText(/Lambda|Search-only|Modo só busca/);
   await expect(page.locator("#answer .ans-contact")).toHaveCount(1);
-  await expect(page.locator("#ansText")).not.toContainText(/To reach André|Para falar com o André/);
 });

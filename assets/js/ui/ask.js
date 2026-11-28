@@ -388,6 +388,7 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
       else if (outcome === "abstained") showAbstention(hits, signal, suggestionNote(done?.suggestion));
       else if (outcome === "declined") showDecline(suggestionNote(done?.suggestion));
       else if (outcome === "answered" && !drafting) ansText.textContent = t().contactReply;   // the `contact` intent sends no token: the links follow
+      else if (outcome === "answered") ansText.textContent = t().error;   // a draft with no checked claim: not search-only
       else if (!hits.length) showNoSources();
       else showPassages(hits, signal);
       // the contact options follow every reply, a block and a failure excepted
