@@ -1,0 +1,33 @@
+event: stage
+data: {"name":"guard","status":"start","ms":null}
+
+event: guard
+data: {"layer":"L2","label":"Injection classifier","action":"pass"}
+
+event: stage
+data: {"name":"guard","status":"end","ms":11}
+
+event: stage
+data: {"name":"route","status":"start","ms":null}
+
+event: stage
+data: {"name":"route","status":"end","ms":380}
+
+event: stage
+data: {"name":"answer","status":"start","ms":null}
+
+event: token
+data: {"text":"André built serverless pipelines on AWS and "}
+
+event: token
+data: {"text":"the internal marker is "}
+
+event: stage
+data: {"name":"answer","status":"end","ms":2100}
+
+event: blocked
+data: {"layer":"L5","category":"prompt_leak","message":"The answer holds the assistant's internal marker."}
+
+event: done
+data: {"trace_id":"9b2c3d4e-5f6a-4b7c-9d8e-0f1a2b3c4d5e","outcome":"blocked","cached":false,"suggestion":null,"contact":[{"label":"LinkedIn","url":"https://www.linkedin.com/in/andrezorzo"},{"label":"GitHub","url":"https://github.com/andrezorzo"},{"label":"Email","url":"mailto:andre_zorzo@yahoo.com"}]}
+

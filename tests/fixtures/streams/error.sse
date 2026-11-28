@@ -5,5 +5,5 @@ event: error
 data: {"code":"internal","message":"Something went wrong on our side."}
 
 event: done
-data: {"trace_id":"3f1c2b9a-8d4e-4f6a-b2c1-9e7d5a3b1c0f","outcome":"error","cached":false,"suggestion":null}
+data: {"trace_id":"3f1c2b9a-8d4e-4f6a-b2c1-9e7d5a3b1c0f","outcome":"error","cached":false,"suggestion":null,"contact":[{"label":"LinkedIn","url":"https://www.linkedin.com/in/andrezorzo"},{"label":"GitHub","url":"https://github.com/andrezorzo"},{"label":"Email","url":"mailto:andre_zorzo@yahoo.com"}]}
 

@@ -1,4 +1,13 @@
 event: stage
+data: {"name":"guard","status":"start","ms":null}
+
+event: guard
+data: {"layer":"L2","label":"Injection classifier","action":"pass"}
+
+event: stage
+data: {"name":"guard","status":"end","ms":11}
+
+event: stage
 data: {"name":"route","status":"start","ms":null}
 
 event: stage
@@ -154,5 +163,5 @@ event: usage
 data: {"tokens_in":2140,"tokens_out":186,"cost_usd":0.0,"latency_ms":6420}
 
 event: done
-data: {"trace_id":"7a2f9c4e-1b3d-4e5f-8a6b-9c0d1e2f3a4b","outcome":"answered","cached":false,"suggestion":null}
+data: {"trace_id":"7a2f9c4e-1b3d-4e5f-8a6b-9c0d1e2f3a4b","outcome":"answered","cached":false,"suggestion":null,"contact":[{"label":"LinkedIn","url":"https://www.linkedin.com/in/andrezorzo"},{"label":"GitHub","url":"https://github.com/andrezorzo"},{"label":"Email","url":"mailto:andre_zorzo@yahoo.com"}]}
 

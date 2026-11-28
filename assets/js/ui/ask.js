@@ -123,13 +123,26 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
     citeDot.setAttribute("cx", x); citeDot.setAttribute("cy", y);
   }
   function startPanel(question) {
-    ans.querySelectorAll(".ans-note, .ans-examples").forEach((el) => el.remove());   // left by a previous answer
+    ans.querySelectorAll(".ans-note, .ans-examples, .ans-contact, .ans-suggestion").forEach((el) => el.remove());   // left by a previous answer
     $("ansQ").textContent = question;
     ansText.replaceChildren(); ansSrc.replaceChildren();
     ansText.className = "ans-text";
     openAnswer(true);
   }
-  function showBlocked() { ansText.textContent = t().blocked; ansText.className = "ans-text warn"; }
+  /**
+   * A block: the layer and the reason in the interface language, the public defenses page, and "this was a
+   * mistake?" pointing to the contact options (zorzo-api LLD "Front against the API"). Any draft is gone.
+   */
+  function showBlocked(block) {
+    ansText.textContent = t().blockedBy(block.layer, block.category);
+    ansText.className = "ans-text warn";
+    const note = document.createElement("p"), defenses = document.createElement("a"), mistake = document.createElement("a");
+    note.className = "ans-note";
+    defenses.href = "/dash/defenses"; defenses.textContent = t().defensesLink;
+    mistake.href = "#contact"; mistake.textContent = t().blockMistake;
+    note.append(defenses, " · ", mistake);
+    ansText.after(note);
+  }
   /** A question that got no answer: the reason, and the public trace when the API sent one. */
   function showFailure({ kind, traceId, retryAfter }) {
     const reason = { offline: t().offline, dropped: t().connectionLost, bot: t().botCheck, limited: t().tryAgainIn(retryAfter) };
@@ -199,6 +212,30 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
     p.className = "ans-note"; a.href = "#contact"; a.textContent = t().contactLink;
     p.append(a); return p;
   }
+  /** The domain's contact options of `done`, in their order; with none sent, the page's contact section. */
+  function contactLinks(options) {
+    const list = document.createElement("ul"); list.className = "ans-contact";
+    const items = options?.length ? options : [{ label: t().contactLink, url: "#contact" }];
+    for (const option of items) {
+      const li = document.createElement("li"), a = document.createElement("a");
+      a.textContent = option.label;
+      // only web, mail and in-page links: never a javascript: URL from the data
+      if (/^(https?:|mailto:|#)/i.test(option.url)) a.href = option.url;
+      if (/^https?:/i.test(option.url)) { a.target = "_blank"; a.rel = "noopener"; }
+      li.append(a); list.append(li);
+    }
+    return list;
+  }
+  /** The example question closest to the visitor's, which a click asks. */
+  function suggestionNote(id) {
+    const example = published.examples.find((e) => e.id === id);
+    if (!example) return null;
+    const p = document.createElement("p"), b = document.createElement("button");
+    p.className = "ans-note ans-suggestion"; p.textContent = `${t().tryExamples} `;
+    b.type = "button"; b.className = "ans-suggest"; b.textContent = example.text;
+    b.addEventListener("click", () => { if (health.state !== "offline") submit(example.text); });   // hidden when offline; never asks then
+    p.append(b); return p;
+  }
   /** Opens the draft, marked as being checked; checked claims replace it. */
   function startDraft() {
     ansText.className = "ans-text draft";
@@ -250,16 +287,18 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
     if (k !== undefined) scene?.impulse(k, 2, true);
   }
   /** "Not in my sources", with the passages that came closest and the contact link. */
-  function showAbstention(hits, signal) {
+  function showAbstention(hits, signal, suggestion) {
     clearDraft();
     ansText.textContent = t().notInSources;
     ansText.after(contactNote());
+    if (suggestion) ansText.after(suggestion);
     if (hits.length) sourceList(hits, signal, t().related);
   }
-  function showDecline() {
+  function showDecline(suggestion) {
     clearDraft();
     ansText.textContent = t().declined;
     ansText.after(contactNote());
+    if (suggestion) ansText.after(suggestion);
   }
 
   /**
@@ -290,7 +329,7 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
     teleAnchor = scene ? [scene.hubPoint(1)] : [];
     teleLine(t().query(words(question).length, question.length));
     let hits = [], ks = [], blocked = null, failure = null, retrieveMs = null;
-    let drafting = false, outcome = null, usage = null;
+    let drafting = false, outcome = null, usage = null, guardAction = null, done = null;
     const claims = [];
     try {
       let first = true;
@@ -299,8 +338,12 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
         if (first) { first = false; health.reached(); }   // a stream: the API answers
         if (ev.kind === "stage" && ev.status === "end") {
           if (ev.name === "retrieve") { retrieveMs = ev.ms; continue; }   // shown with the hits
-          teleLine(ev.name === "guard" ? t().guardOk : t().stage(ev.name, ev.ms));
+          // a block says so by its own line, once `blocked` arrives
+          if (ev.name === "guard") { if (guardAction !== "block") teleLine(guardAction === "error" ? t().guardError : t().guardOk); }
+          else teleLine(t().stage(ev.name, ev.ms));
           if (ev.name === "guard" && named.length) teleLine(`graph · ${named.map((j) => published.entities[j].name).join(", ")}`);
+        } else if (ev.kind === "guard") {
+          guardAction = ev.action;
         } else if (ev.kind === "blocked") {
           blocked = ev; teleLine(t().guardBlocked(ev.layer), "warn");
         } else if (ev.kind === "degraded") {
@@ -321,7 +364,7 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
         } else if (ev.kind === "usage") {
           usage = ev;
         } else if (ev.kind === "done") {
-          outcome = ev.outcome;
+          outcome = ev.outcome; done = ev;
         }
       }
     } catch (err) {
@@ -340,12 +383,16 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
     const render = () => {
       clearDraft();   // a draft left by a stream that broke is never shown as an answer
       if (failure) showFailure(failure);
-      else if (blocked) showBlocked();
+      else if (blocked) showBlocked(blocked);
       else if (claims.length) showClaims(claims, hits);
-      else if (outcome === "abstained") showAbstention(hits, signal);
-      else if (outcome === "declined") showDecline();
+      else if (outcome === "abstained") showAbstention(hits, signal, suggestionNote(done?.suggestion));
+      else if (outcome === "declined") showDecline(suggestionNote(done?.suggestion));
+      else if (outcome === "answered" && !drafting) ansText.textContent = t().contactReply;   // the `contact` intent sends no token: the links follow
+      else if (outcome === "answered") ansText.textContent = t().error;   // a draft with no checked claim: not search-only
       else if (!hits.length) showNoSources();
       else showPassages(hits, signal);
+      // the contact options follow every reply, a block and a failure excepted
+      if (!failure && !blocked) ansSrc.after(contactLinks(done?.contact));
     };
     // the answer is on screen first; a brain effect that throws then ends the brain, not the answer
     const holdBrain = (impulse) => {

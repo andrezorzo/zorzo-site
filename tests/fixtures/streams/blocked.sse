@@ -1,0 +1,15 @@
+event: stage
+data: {"name":"guard","status":"start","ms":null}
+
+event: guard
+data: {"layer":"L2","label":"Injection classifier","action":"block"}
+
+event: stage
+data: {"name":"guard","status":"end","ms":12}
+
+event: blocked
+data: {"layer":"L2","category":"injection","message":"The question looks like an attempt to steer the assistant."}
+
+event: done
+data: {"trace_id":"8a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d","outcome":"blocked","cached":false,"suggestion":null,"contact":[{"label":"LinkedIn","url":"https://www.linkedin.com/in/andrezorzo"},{"label":"GitHub","url":"https://github.com/andrezorzo"},{"label":"Email","url":"mailto:andre_zorzo@yahoo.com"}]}
+

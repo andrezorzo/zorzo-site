@@ -90,7 +90,7 @@ html { scroll-behavior: smooth; }
 .turnstile { position: absolute; width: 0; height: 0; overflow: hidden; }
 .ask-examples { margin: 0; }
 .ask-examples button { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.has-answer .ask-examples, .stage.offline .ans-examples { visibility: hidden; }
+.has-answer .ask-examples, .stage.offline .ans-examples, .stage.offline .ans-suggestion { visibility: hidden; }
 /* the free-tier notice: always under the box, so it is read before a question is sent */
 .ask-privacy { margin: 0 0 8px; color: var(--muted); font-size: 12px; line-height: 1.4; }
 /* narrower than 17:20, or under 520 px tall, the notice is smaller and the list shows three examples, so the box doesn't
@@ -167,6 +167,14 @@ html { scroll-behavior: smooth; }
 .src-text { display: -webkit-box; margin-top: 2px; font-size: calc(12 * var(--px)); color: #C4DADC; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .src-link { display: block; margin: 2px 0 0 9px; font-size: calc(11 * var(--px)); color: var(--lilac); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .src-link:hover { color: var(--mint-hi); }
+.ans-note a { color: var(--mint-hi); }
+.ans-note a:hover { color: var(--amber); }
+.ans-suggest { border: 0; padding: 0; background: none; font: inherit; color: var(--mint-hi); text-align: left; cursor: pointer; }
+.ans-suggest::before { content: "> "; color: var(--mint); }
+.ans-suggest:hover { color: var(--amber); }
+.ans-contact { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: calc(12 * var(--px)) 0 0; padding: 0; list-style: none; font-size: calc(11 * var(--px)); }
+.ans-contact a { color: var(--lilac); }
+.ans-contact a:hover { color: var(--mint-hi); }
 .ans-examples { list-style: none; margin: 6px 0 0; padding: 0; }
 .ans-examples li + li { margin-top: 4px; }
 .ans-examples button { border: 0; padding: 2px 0; background: none; font: inherit; color: var(--mint-hi); text-align: left; cursor: pointer; }
@@ -366,6 +374,7 @@ html[data-lang="en"] .pt, html[data-lang="pt"] .en { display: none !important; }
 .foot { padding: 96px 0 40px; color: var(--muted); font-size: 13px; }
 .foot p { margin: 0; }
 .foot .foot-privacy { max-width: var(--measure); margin-top: 8px; }
+.foot .foot-credit { margin-top: 8px; }
 @media (max-aspect-ratio: 17/20) { .more { bottom: calc(80px + env(safe-area-inset-bottom) + var(--ex)); } }
 /* the hero's glow fades into the page below (no hard edge where the stage ends) */
 .stage::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 16%; background: linear-gradient(rgba(0, 1, 4, 0), var(--ink-0)); pointer-events: none; }

@@ -2,20 +2,34 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://zorzo.dev.br/contracts/sse-v1.schema.json",
   "title": "zorzo.dev.br stream events, v1",
-  "description": "SSE frames `event: <name>` and `data: <JSON>`; `: ping` comments keep the connection alive. Ordering: `done` is always last, sent exactly once unless the connection drops; `blocked` and `error` are followed only by `done`; `degraded` is followed only by its `retrieval` hits, then `done`; every `token` comes before the first `claim`; a cached answer sends `stage`, the cached `claim` events, `usage` with cost 0 and `done {cached: true}`, with no `token`. v1 freezes at launch.",
+  "description": "SSE frames `event: <name>` and `data: <JSON>`; `: ping` comments keep the connection alive. Ordering: `done` is always last, sent exactly once unless the connection drops; `blocked` and `error` are followed only by `done` (an output check's `blocked` may come after `token`s); `degraded` is followed only by its `retrieval` hits, then `done`; every `token` comes before the first `claim`; a cached answer sends `stage`, the cached `claim` events, `usage` with cost 0 and `done {cached: true}`, with no `token`. v1 freezes at launch.",
   "$defs": {
     "Blocked": {
       "additionalProperties": false,
       "properties": {
         "layer": {
+          "enum": [
+            "L0",
+            "L1",
+            "L2",
+            "L3",
+            "L4",
+            "L5",
+            "L6"
+          ],
           "title": "Layer",
           "type": "string"
         },
         "category": {
+          "enum": [
+            "injection",
+            "prompt_leak"
+          ],
           "title": "Category",
           "type": "string"
         },
         "message": {
+          "description": "English, for the trace; the front words it from `layer` and `category`",
           "title": "Message",
           "type": "string"
         }
@@ -106,6 +120,25 @@
       "title": "ClaimEvent",
       "type": "object"
     },
+    "ContactOption": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "url"
+      ],
+      "title": "ContactOption",
+      "type": "object"
+    },
     "Degraded": {
       "additionalProperties": false,
       "properties": {
@@ -184,15 +217,31 @@
               "type": "null"
             }
           ],
+          "default": null,
           "description": "Id of the closest example question, on an abstention or decline",
           "title": "Suggestion"
+        },
+        "contact": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ContactOption"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The domain's contact options, in their order",
+          "title": "Contact"
         }
       },
       "required": [
         "trace_id",
         "outcome",
-        "cached",
-        "suggestion"
+        "cached"
       ],
       "title": "Done",
       "type": "object"
@@ -258,14 +307,29 @@
       "additionalProperties": false,
       "properties": {
         "layer": {
+          "enum": [
+            "L0",
+            "L1",
+            "L2",
+            "L3",
+            "L4",
+            "L5",
+            "L6"
+          ],
           "title": "Layer",
           "type": "string"
         },
         "label": {
+          "description": "English, for the trace",
           "title": "Label",
           "type": "string"
         },
         "action": {
+          "enum": [
+            "pass",
+            "block",
+            "error"
+          ],
           "title": "Action",
           "type": "string"
         }
