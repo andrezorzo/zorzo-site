@@ -3,7 +3,7 @@ import { askQuestion, expect, serveStream, stream, test, type Page } from "./fix
 // F01-T06 AC7: the draft, marked as being checked, replaced by the checked claims with their citations
 // (zorzo-api LLD "Front against the API").
 
-async function ask(page: Page, name: "answer" | "abstained" | "declined") {
+async function ask(page: Page, name: "answer" | "abstained" | "declined" | "cached") {
   await serveStream(page, stream(name));
   await page.goto("/");
   await expect(page.locator("#stage")).toHaveClass(/ready/);
@@ -77,4 +77,30 @@ test("a decline shows its message", async ({ page }) => {
   await expect(page.locator("#ansText")).toHaveText(/outside what this site answers|fora do que este site responde/);
   await expect(page.locator("#answer a[href='#contact']")).toHaveCount(1);
   await expect(page.locator("#ansSources .src")).toHaveCount(0);
+});
+
+// F01-T09 AC2: a stored answer is shown with its steps and a label saying it was reused.
+test("a reused answer is labeled and its citations open", async ({ page }) => {
+  const asked: string[] = [];
+  page.on("request", (r) => { if (new URL(r.url()).pathname === "/api/v1/ask") asked.push(r.url()); });
+  await ask(page, "cached");
+  await expect(page.locator("#telemetry")).toContainText(/reused a verified answer to the same question|reaproveitou uma resposta verificada para a mesma pergunta/);
+  await expect(page.locator("#answer .ans-reused")).toContainText(/Reused answer|Resposta reaproveitada/);
+  await expect(page.locator("#ansText .claim")).toHaveCount(3);
+  await expect(page.locator("#ansText .claim.gap")).toHaveText("His certifications are not in my sources.");
+  // the stream has no `retrieval`: the titles come from corpus.json
+  await expect(page.locator("#ansSources li")).toHaveCount(2);
+  await page.locator("#ansText .cite").nth(2).click();   // [2]: the Experience passage
+  const open = page.locator("#ansSources li.is-open");
+  await expect(open).toHaveCount(1);
+  await expect(open).toContainText("[2] FAQ › Experience");
+  await expect(open.locator(".src-text")).toContainText("André has more than twenty years of backend experience");
+  expect(asked).toHaveLength(1);
+});
+
+test("an answer that was not reused has no label", async ({ page }) => {
+  await ask(page, "answer");
+  await expect(page.locator("#ansText .claim")).toHaveCount(4);
+  await expect(page.locator(".ans-reused")).toHaveCount(0);
+  await expect(page.locator("#telemetry")).not.toContainText(/reused a verified answer|reaproveitou uma resposta/);
 });

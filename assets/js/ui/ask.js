@@ -296,6 +296,11 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
     const k = byId.get(Number(li.dataset.id));
     if (k !== undefined) scene?.impulse(k, 2, true);
   }
+  /** The label of an answer served from the cache (zorzo-api LLD "6.9 Answer cache"). */
+  function reusedNote() {
+    const note = document.createElement("p"); note.className = "ans-note ans-reused"; note.textContent = t().reusedLabel;
+    return note;
+  }
   /** "Not in my sources", with the passages that came closest and the contact link. */
   function showAbstention(hits, signal, suggestion) {
     clearDraft();
@@ -389,13 +394,14 @@ export function startAsk({ scene: brain, stage, ask, published, health, bot }) {
       inputError.textContent = t().invalidInput; inputError.hidden = false;
       return;
     }
+    if (done?.cached) teleLine(t().reused);   // a stored, verified answer: no retrieval, answer or judge ran
     teleLine(t().latency((performance.now() - t0).toFixed(0)));
     teleLine(usage ? t().costOf(usage.cost_usd) : t().cost, "dim");
     const render = () => {
       clearDraft();   // a draft left by a stream that broke is never shown as an answer
       if (failure) showFailure(failure);
       else if (blocked) showBlocked(blocked);
-      else if (claims.length) showClaims(claims, hits);
+      else if (claims.length) { showClaims(claims, hits); if (done?.cached) ansText.after(reusedNote()); }
       else if (done?.notice === "no_context") { clearDraft(); showWithExamples(t().noContext); }   // instead of "not in my sources"
       else if (outcome === "abstained") showAbstention(hits, signal, suggestionNote(done?.suggestion));
       else if (outcome === "declined") showDecline(suggestionNote(done?.suggestion));
