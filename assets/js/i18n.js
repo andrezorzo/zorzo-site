@@ -46,6 +46,10 @@ const T = {
     related: "Trechos mais próximos", contactLink: "Falar com o André",
     declined: "Isso fica fora do que este site responde. Pergunte sobre a carreira do André, os projetos dele ou como o site foi feito.",
     cite: (n) => `fonte ${n}`, costOf: (usd) => `custo · US$${usd.toFixed(4)}`,
+    newConversation: "Nova conversa",
+    newConversationNotice: "Nova conversa: a anterior ficou parada tempo demais, e as perguntas dela não contam mais.",
+    noContext: "Não tenho contexto anterior nesta conversa — sobre o que você está perguntando?",
+    otherLanguage: "Este site responde em português e inglês.",
   },
   en: {
     typed: "building intelligent systems", role: "Senior backend engineer · Applied AI",
@@ -83,6 +87,10 @@ const T = {
     related: "Closest passages", contactLink: "Contact André",
     declined: "That's outside what this site answers. Ask about André's career, his projects or how the site was built.",
     cite: (n) => `source ${n}`, costOf: (usd) => `cost · US$${usd.toFixed(4)}`,
+    newConversation: "New conversation",
+    newConversationNotice: "New conversation: the last one was idle too long, so its questions no longer count.",
+    noContext: "I don't have earlier context in this conversation — what are you asking about?",
+    otherLanguage: "This site answers in English and Portuguese.",
   },
 };
 

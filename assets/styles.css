@@ -144,6 +144,9 @@ html { scroll-behavior: smooth; }
 .ans-q { margin: 0; color: var(--mint-hi); font-size: calc(15 * var(--px)); }
 .ans-q::before { content: "> "; color: var(--mint); }
 .answer header button { border: 0; background: none; color: var(--lilac); font: inherit; font-size: 18px; line-height: 1; cursor: pointer; }
+.ans-actions { display: flex; align-items: baseline; gap: 10px; flex: none; }
+.answer header .ans-restart { font-size: calc(11 * var(--px)); white-space: nowrap; }
+.answer header .ans-restart:hover { color: var(--mint-hi); }
 .ans-text { margin: calc(12 * var(--px)) 0 0; font-size: calc(14 * var(--px)); color: #E4F2F3; }
 .ans-text.warn { color: var(--amber); }
 .ans-note { margin: calc(10 * var(--px)) 0 0; font-size: calc(11 * var(--px)); color: var(--lilac-dim); }
