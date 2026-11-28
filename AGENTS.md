@@ -70,9 +70,19 @@ This project's Baseline target is Baseline Widely available.
   summary, the plan path in zorzo-api, a "Criteria" section with one item per `AC<n>` (the test that proves
   it, or what a human reviewer checks and where) and optional "Notes". Any other PR has "What", "Why"
   (where it came from, e.g. a review) and "Review" (the files and sections to look at).
+- **Review findings:** a correctness or important finding is fixed and the fix is reviewed again, until a
+  round has none. A nit is never fixed in the task and never starts another round: it is recorded in the
+  zorzo-api task folder's `review-nits.md` (zorzo-site section), for a later cleanup task.
+- **No `git stash`:** worktrees share one stash stack, so a stash can pop another session's work. Set work
+  aside with a temporary commit.
 - **No AI attribution:** no co-author trailers or "generated with" lines in commits or pull requests.
 - **Merge:** merging is the owner's decision. An agent merges only when the owner explicitly authorizes
   that PR or task, and a refused `gh pr merge` is never worked around.
+
+## Dependencies
+
+A new vendored library or test dependency is pinned to a release at least two weeks old, with its license
+file next to it.
 
 ## Library documentation
 
